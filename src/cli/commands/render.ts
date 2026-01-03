@@ -1,15 +1,18 @@
 import { Command } from "commander";
-import { $ } from "bun";
+import { bundle } from "@remotion/bundler";
+import { renderMedia, selectComposition } from "@remotion/renderer";
 import { loadConfig } from "../utils/config";
-import { logger } from "../utils/logger";
+import { logger, ProgressBar } from "../utils/logger";
 import {
   themeSchema,
   animationSchema,
   presetSchema,
   presetDimensions,
 } from "../../calculate-metadata/schema";
-import { basename } from "path";
+import { basename, join } from "path";
 import type { StaticFile } from "../../calculate-metadata/get-files";
+
+const entryPoint = join(import.meta.dir, "../../index.ts");
 
 async function readFiles(files: string[]): Promise<StaticFile[]> {
   return Promise.all(
@@ -87,19 +90,45 @@ Examples:
     const presetDims =
       presetDimensions[preset as keyof typeof presetDimensions];
 
-    const props = JSON.stringify({
+    const inputProps = {
       theme,
       preset,
       animation,
       charsPerSecond,
       files: staticFiles,
-    });
+    };
 
     logger.info(`Rendering ${files.length} file(s) with ${theme} theme`);
     logger.info(`Preset: ${preset} (${presetDims.width}x${presetDims.height})`);
 
     try {
-      await $`bunx remotion render src/index.ts Main ${output} --props=${props} --height=${presetDims.height} --width=${presetDims.width} --fps=${fps}`;
+      const bundleProgress = new ProgressBar("Bundling");
+      const bundleLocation = await bundle({
+        entryPoint,
+        onProgress: (p) => bundleProgress.update(p / 100),
+      });
+
+      const composition = await selectComposition({
+        serveUrl: bundleLocation,
+        id: "Main",
+        inputProps,
+      });
+
+      const renderProgress = new ProgressBar("Rendering");
+      await renderMedia({
+        composition: {
+          ...composition,
+          width: presetDims.width,
+          height: presetDims.height,
+          fps,
+        },
+        serveUrl: bundleLocation,
+        codec: "h264",
+        outputLocation: output,
+        inputProps,
+        onProgress: ({ progress }) => renderProgress.update(progress),
+      });
+
       logger.success(`Video saved to ${output}`);
     } catch (error) {
       logger.error("Render failed");
