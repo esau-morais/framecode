@@ -2,31 +2,24 @@ import { z } from "zod";
 import { CalculateMetadataFunction } from "remotion";
 import { getThemeColors } from "./theme";
 import { Props } from "../Main";
-import { schema } from "./schema";
+import { schema, presetDimensions } from "./schema";
 import { processSnippet } from "./process-snippet";
-import { getFiles } from "./get-files";
-import { measureText } from "@remotion/layout-utils";
+import { getFilesFromStudio } from "./get-files";
 import {
-  fontFamily,
-  fontSize,
+  fontSize as baseFontSize,
   horizontalPadding,
   tabSize,
-  waitUntilDone,
+  CHAR_WIDTH_RATIO,
 } from "../font";
 import { HighlightedCode } from "codehike/code";
+import { flattenCode } from "../TypewriterTransition";
 
 export const calculateMetadata: CalculateMetadataFunction<
   z.infer<typeof schema> & Props
 > = async ({ props }) => {
-  const contents = await getFiles();
+  const contents = props.files ?? (await getFilesFromStudio());
 
-  await waitUntilDone();
-  const widthPerCharacter = measureText({
-    text: "A",
-    fontFamily,
-    fontSize,
-    validateFontIsLoaded: true,
-  }).width;
+  const preset = presetDimensions[props.preset];
 
   const maxCharacters = Math.max(
     ...contents
@@ -35,9 +28,10 @@ export const calculateMetadata: CalculateMetadataFunction<
       .map((value) => value.replaceAll("\t", " ".repeat(tabSize)).length)
       .flat(),
   );
-  const codeWidth = widthPerCharacter * maxCharacters;
 
-  const defaultStepDuration = 90;
+  const maxLinesInSnippet = Math.max(
+    ...contents.map(({ value }) => value.split("\n").length),
+  );
 
   const themeColors = await getThemeColors(props.theme);
 
@@ -46,24 +40,50 @@ export const calculateMetadata: CalculateMetadataFunction<
     twoSlashedCode.push(await processSnippet(snippet, props.theme));
   }
 
-  const naturalWidth = codeWidth + horizontalPadding * 2;
-  const divisibleByTwo = Math.ceil(naturalWidth / 2) * 2; // MP4 requires an even width
+  const finalWidth = preset.width;
+  const finalHeight = preset.height;
 
-  const minimumWidth = props.width.type === "fixed" ? 0 : 1080;
-  const minimumWidthApplied = Math.max(minimumWidth, divisibleByTwo);
+  const availableHeight = finalHeight - 120;
+  const lineHeight = 1.5;
+  const maxFontSizeByLines = availableHeight / (maxLinesInSnippet * lineHeight);
+
+  const availableWidth = finalWidth - horizontalPadding * 2;
+  const maxFontSizeByWidth =
+    maxCharacters > 0
+      ? availableWidth / (maxCharacters * CHAR_WIDTH_RATIO)
+      : baseFontSize;
+
+  const fontSize = Math.min(
+    baseFontSize,
+    Math.floor(Math.min(maxFontSizeByLines, maxFontSizeByWidth)),
+  );
+
+  const codeWidth = fontSize * CHAR_WIDTH_RATIO * maxCharacters;
+
+  const fps = 30;
+  const totalChars = twoSlashedCode.reduce(
+    (sum, code) => sum + flattenCode(code).length,
+    0,
+  );
+  const typewriterDuration =
+    Math.ceil((totalChars / props.charsPerSecond) * fps) + fps;
+  const morphDuration = contents.length * 90;
+  const durationInFrames =
+    props.animation === "typewriter" ? typewriterDuration : morphDuration;
 
   return {
-    durationInFrames: contents.length * defaultStepDuration,
-    width:
-      props.width.type === "fixed"
-        ? Math.max(minimumWidthApplied, props.width.value)
-        : minimumWidthApplied,
+    durationInFrames,
+    width: finalWidth,
+    height: finalHeight,
     props: {
       theme: props.theme,
-      width: props.width,
+      preset: props.preset,
+      animation: props.animation,
+      charsPerSecond: props.charsPerSecond,
       steps: twoSlashedCode,
       themeColors,
       codeWidth,
+      fontSize,
     },
   };
 };

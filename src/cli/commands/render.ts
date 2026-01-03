@@ -2,115 +2,112 @@ import { Command } from "commander";
 import { $ } from "bun";
 import { loadConfig } from "../utils/config";
 import { logger } from "../utils/logger";
-import { themeSchema } from "../../calculate-metadata/theme";
-import { copyFile, rm, mkdir } from "fs/promises";
-import { extname } from "path";
+import {
+  themeSchema,
+  animationSchema,
+  presetSchema,
+  presetDimensions,
+} from "../../calculate-metadata/schema";
+import { basename } from "path";
+import type { StaticFile } from "../../calculate-metadata/get-files";
 
-const PRESETS = {
-  tweet: { width: 720, height: 1280 },
-  tutorial: { width: 1280, height: 720 },
-  square: { width: 720, height: 720 },
-} as const;
-
-export const renderCommand = new Command("render")
-  .description("Render code files to video")
-  .argument("<files...>", "code files to render")
-  .option("-o, --output <path>", "output path", "output.mp4")
-  .option("-t, --theme <theme>", "syntax theme", "github-dark")
-  .option("-p, --preset <preset>", "export preset", "tutorial")
-  .option("-f, --fps <number>", "frame rate", "30")
-  .option("-w, --width <number>", "custom width")
-  .option("-h, --height <number>", "custom height")
-  .option("-c, --config <path>", "config file path")
-  .action(async (files: string[], options) => {
-    const config = await loadConfig(options.config);
-    const opts = {
-      theme: options.theme ?? config.theme ?? "github-dark",
-      preset: options.preset ?? config.preset ?? "tutorial",
-      fps: options.fps ?? config.fps ?? "30",
-      width: options.width ?? config.width,
-      height: options.height ?? config.height,
-      output: options.output,
-    };
-
-    const result = themeSchema.safeParse(opts.theme);
-    if (!result.success) {
-      logger.error(`Invalid theme: ${opts.theme}`);
-      logger.info(`Run 'framecode themes' to see available themes`);
-      process.exit(1);
-    }
-
-    await prepareFiles(files);
-
-    const preset =
-      PRESETS[opts.preset as keyof typeof PRESETS] ?? PRESETS.tutorial;
-
-    const parseNumber = (
-      value: string | undefined,
-      name: string,
-    ): number | undefined => {
-      if (!value) return undefined;
-      const num = Number(value);
-      if (isNaN(num) || num <= 0) {
-        logger.error(`Invalid ${name}: ${value} (must be a positive number)`);
-        process.exit(1);
-      }
-      return num;
-    };
-
-    const width = parseNumber(opts.width, "width") ?? preset.width;
-    const height = parseNumber(opts.height, "height") ?? preset.height;
-    const fps = parseNumber(opts.fps, "fps") ?? 30;
-
-    const props = JSON.stringify({
-      theme: opts.theme,
-      width: opts.width
-        ? { type: "fixed", value: Number(opts.width) }
-        : { type: "auto" },
-    });
-
-    logger.info(`Rendering with theme: ${opts.theme}`);
-
-    try {
-      const result =
-        await $`bun remotionb render src/index.ts Main ${opts.output} --props=${props} --height=${height} --width=${width} --fps=${fps}`;
-
-      if (!result.exitCode || result.exitCode === 0) {
-        logger.success(`Video saved to ${opts.output}`);
-      } else {
-        throw new Error(`Render process exited with code ${result.exitCode}`);
-      }
-    } catch (error) {
-      logger.error("Rendering failed");
-      if (error instanceof Error && error.message) {
-        logger.error(error.message);
-      }
-      throw error;
-    } finally {
-      await cleanupFiles(files);
-    }
-  });
-
-async function prepareFiles(files: string[]) {
-  await mkdir("public", { recursive: true });
-
-  await Promise.all(
-    files.map(async (filePath, i) => {
+async function readFiles(files: string[]): Promise<StaticFile[]> {
+  return Promise.all(
+    files.map(async (filePath) => {
       const file = Bun.file(filePath);
       if (!(await file.exists())) {
         throw new Error(`File not found: ${filePath}`);
       }
-      const ext = extname(filePath);
-      await copyFile(filePath, `public/code${i + 1}${ext}`);
+      return {
+        filename: basename(filePath),
+        value: await file.text(),
+      };
     }),
   );
 }
 
-async function cleanupFiles(files: string[]) {
-  await Promise.all(
-    files.map(async (filePath, i) => {
-      const ext = extname(filePath);
-      await rm(`public/code${i + 1}${ext}`, { force: true });
-    }),
-  );
-}
+export const renderCommand = new Command("render")
+  .description("Render code files to video")
+  .argument("<files...>", "code files to render")
+  .option("-o, --output <path>", "output file path", "output.mp4")
+  .option("-t, --theme <name>", "syntax theme", "github-dark")
+  .option("-p, --preset <name>", "tweet|tutorial|square", "tutorial")
+  .option("-a, --animation <name>", "morph|typewriter", "morph")
+  .option("--cps <number>", "chars per second (typewriter)", "30")
+  .option("-f, --fps <number>", "frames per second", "30")
+  .option("-c, --config <path>", "config file path")
+  .addHelpText(
+    "after",
+    `
+Examples:
+  $ framecode render code.ts
+  $ framecode render code.ts -t github-dark -p tweet -a typewriter
+  $ framecode render file1.ts file2.ts -o video.mp4
+  $ framecode render code.ts --cps 50 -a typewriter`,
+  )
+  .action(async (files: string[], options) => {
+    const config = await loadConfig(options.config);
+
+    const theme = options.theme ?? config.theme ?? "github-dark";
+    const preset = options.preset ?? config.preset ?? "tutorial";
+    const animation = options.animation ?? config.animation ?? "morph";
+    const charsPerSecond = Number(
+      options.charsPerSecond ?? config.charsPerSecond ?? 30,
+    );
+    const fps = Number(options.fps ?? config.fps ?? 30);
+    const output = options.output;
+
+    if (!themeSchema.safeParse(theme).success) {
+      logger.error(`Invalid theme: ${theme}`);
+      logger.info("Run 'framecode themes' to see available themes");
+      process.exit(1);
+    }
+
+    if (!animationSchema.safeParse(animation).success) {
+      logger.error(`Invalid animation: ${animation}`);
+      logger.info("Valid: morph, typewriter");
+      process.exit(1);
+    }
+
+    if (!presetSchema.safeParse(preset).success) {
+      logger.error(`Invalid preset: ${preset}`);
+      logger.info("Valid: tweet (9:16), tutorial (16:9), square (1:1)");
+      process.exit(1);
+    }
+
+    if (isNaN(charsPerSecond) || charsPerSecond <= 0) {
+      logger.error(`Invalid chars-per-second: ${options.charsPerSecond}`);
+      process.exit(1);
+    }
+
+    if (isNaN(fps) || fps <= 0 || fps > 120) {
+      logger.error(`Invalid fps: ${options.fps} (must be 1-120)`);
+      process.exit(1);
+    }
+
+    const staticFiles = await readFiles(files);
+    const presetDims =
+      presetDimensions[preset as keyof typeof presetDimensions];
+
+    const props = JSON.stringify({
+      theme,
+      preset,
+      animation,
+      charsPerSecond,
+      files: staticFiles,
+    });
+
+    logger.info(`Rendering ${files.length} file(s) with ${theme} theme`);
+    logger.info(`Preset: ${preset} (${presetDims.width}x${presetDims.height})`);
+
+    try {
+      await $`bunx remotion render src/index.ts Main ${output} --props=${props} --height=${presetDims.height} --width=${presetDims.width} --fps=${fps}`;
+      logger.success(`Video saved to ${output}`);
+    } catch (error) {
+      logger.error("Render failed");
+      if (error instanceof Error) {
+        logger.error(error.message);
+      }
+      process.exit(1);
+    }
+  });

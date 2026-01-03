@@ -17,7 +17,7 @@ export function applyStyle({
   if (opacity) {
     element.style.opacity = linearProgress.toString();
   }
-  if (color) {
+  if (color && color[0].length && color[1].length) {
     element.style.color = interpolateColors(progress, [0, 1], color);
   }
   const x = translateX ? interpolate(progress, [0, 1], translateX) : 0;

@@ -1,6 +1,7 @@
 import { AbsoluteFill, Series, useVideoConfig } from "remotion";
 import { ProgressBar } from "./ProgressBar";
 import { CodeTransition } from "./CodeTransition";
+import { TypewriterTransition } from "./TypewriterTransition";
 import { HighlightedCode } from "codehike/code";
 import { ThemeColors, ThemeProvider } from "./calculate-metadata/theme";
 import { useMemo } from "react";
@@ -14,9 +15,17 @@ export type Props = {
   steps: HighlightedCode[] | null;
   themeColors: ThemeColors | null;
   codeWidth: number | null;
+  fontSize?: number;
 } & z.infer<typeof schema>;
 
-export const Main: React.FC<Props> = ({ steps, themeColors, codeWidth }) => {
+export const Main: React.FC<Props> = ({
+  steps,
+  themeColors,
+  codeWidth,
+  animation,
+  charsPerSecond,
+  fontSize,
+}) => {
   if (!steps) {
     throw new Error("Steps are not defined");
   }
@@ -50,22 +59,31 @@ export const Main: React.FC<Props> = ({ steps, themeColors, codeWidth }) => {
               padding: `${verticalPadding}px 0px`,
             }}
           >
-            <Series>
-              {steps.map((step, index) => (
-                <Series.Sequence
-                  key={index}
-                  layout="none"
-                  durationInFrames={stepDuration}
-                  name={step.meta}
-                >
-                  <CodeTransition
-                    oldCode={steps[index - 1]}
-                    newCode={step}
-                    durationInFrames={transitionDuration}
-                  />
-                </Series.Sequence>
-              ))}
-            </Series>
+            {animation === "typewriter" ? (
+              <TypewriterTransition
+                code={steps[0]}
+                charsPerSecond={charsPerSecond}
+                fontSize={fontSize}
+              />
+            ) : (
+              <Series>
+                {steps.map((step, index) => (
+                  <Series.Sequence
+                    key={index}
+                    layout="none"
+                    durationInFrames={stepDuration}
+                    name={step.meta}
+                  >
+                    <CodeTransition
+                      oldCode={steps[index - 1]}
+                      newCode={step}
+                      durationInFrames={transitionDuration}
+                      fontSize={fontSize}
+                    />
+                  </Series.Sequence>
+                ))}
+              </Series>
+            )}
           </AbsoluteFill>
         </AbsoluteFill>
       </AbsoluteFill>

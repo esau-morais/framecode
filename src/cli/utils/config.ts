@@ -1,14 +1,18 @@
 import { z } from "zod";
 import { homedir } from "os";
 import { join } from "path";
-import { themeSchema } from "../../calculate-metadata/theme";
+import {
+  themeSchema,
+  animationSchema,
+  presetSchema,
+} from "../../calculate-metadata/schema";
 
 const configSchema = z.object({
   theme: themeSchema.optional(),
-  preset: z.enum(["tweet", "tutorial", "square"]).optional(),
+  preset: presetSchema.optional(),
+  animation: animationSchema.optional(),
+  charsPerSecond: z.number().int().positive().optional(),
   fps: z.number().int().min(1).max(120).optional(),
-  width: z.number().int().positive().optional(),
-  height: z.number().int().positive().optional(),
 });
 
 export type Config = z.infer<typeof configSchema>;

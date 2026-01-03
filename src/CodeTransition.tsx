@@ -13,16 +13,18 @@ import { callout } from "./annotations/Callout";
 
 import { tokenTransitions } from "./annotations/InlineToken";
 import { errorInline, errorMessage } from "./annotations/Error";
-import { fontFamily, fontSize, tabSize } from "./font";
+import { fontFamily, fontSize as baseFontSize, tabSize } from "./font";
 
 export function CodeTransition({
   oldCode,
   newCode,
   durationInFrames = 30,
+  fontSize,
 }: {
   readonly oldCode: HighlightedCode | null;
   readonly newCode: HighlightedCode;
   readonly durationInFrames?: number;
+  readonly fontSize?: number;
 }) {
   const frame = useCurrentFrame();
 
@@ -86,12 +88,12 @@ export function CodeTransition({
   const style: React.CSSProperties = useMemo(() => {
     return {
       position: "relative",
-      fontSize,
+      fontSize: fontSize ?? baseFontSize,
       lineHeight: 1.5,
       fontFamily,
       tabSize,
     };
-  }, []);
+  }, [fontSize]);
 
   return <Pre ref={ref} code={code} handlers={handlers} style={style} />;
 }

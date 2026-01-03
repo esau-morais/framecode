@@ -1,6 +1,6 @@
 import { highlight } from "codehike/code";
 import { createTwoslashFromCDN } from "twoslash-cdn";
-import { PublicFolderFile } from "./get-files";
+import { StaticFile } from "./get-files";
 import { Theme, loadTheme } from "./theme";
 import { CompilerOptions, JsxEmit, ModuleKind, ScriptTarget } from "typescript";
 
@@ -15,7 +15,7 @@ const twoslash = createTwoslashFromCDN({
   compilerOptions,
 });
 
-export const processSnippet = async (step: PublicFolderFile, theme: Theme) => {
+export const processSnippet = async (step: StaticFile, theme: Theme) => {
   const splitted = step.filename.split(".");
   const extension = splitted[splitted.length - 1];
 
