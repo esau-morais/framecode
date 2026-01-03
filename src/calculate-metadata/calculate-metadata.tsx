@@ -16,7 +16,7 @@ import {
 import { HighlightedCode } from "codehike/code";
 
 export const calculateMetadata: CalculateMetadataFunction<
-  Props & z.infer<typeof schema>
+  z.infer<typeof schema> & Props
 > = async ({ props }) => {
   const contents = await getFiles();
 
