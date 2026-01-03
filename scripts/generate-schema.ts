@@ -33,7 +33,6 @@ const jsonSchema = {
       minimum: 1,
     },
   },
-  required: ["theme", "preset", "fps"],
   additionalProperties: false,
 };
 

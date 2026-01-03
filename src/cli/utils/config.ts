@@ -14,11 +14,25 @@ const configSchema = z.object({
 export type Config = z.infer<typeof configSchema>;
 
 export async function loadConfig(configPath?: string): Promise<Config> {
+  if (configPath) {
+    const file = Bun.file(configPath);
+    if (!(await file.exists())) {
+      console.warn(`Warning: Config file not found: ${configPath}`);
+      return {};
+    }
+    try {
+      const json = await file.json();
+      return configSchema.parse(json);
+    } catch {
+      console.warn(`Warning: Failed to parse config file: ${configPath}`);
+      return {};
+    }
+  }
+
   const paths = [
-    configPath,
     "./framecode.json",
     join(homedir(), ".config", "framecode", "config.json"),
-  ].filter(Boolean) as string[];
+  ];
 
   for (const path of paths) {
     try {

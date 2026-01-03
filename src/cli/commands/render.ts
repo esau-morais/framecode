@@ -18,13 +18,20 @@ export const renderCommand = new Command("render")
   .option("-o, --output <path>", "output path", "output.mp4")
   .option("-t, --theme <theme>", "syntax theme", "github-dark")
   .option("-p, --preset <preset>", "export preset", "tutorial")
-  .option("--fps <number>", "frame rate", "30")
-  .option("--width <number>", "custom width")
-  .option("--height <number>", "custom height")
+  .option("-f, --fps <number>", "frame rate", "30")
+  .option("-w, --width <number>", "custom width")
+  .option("-h, --height <number>", "custom height")
   .option("-c, --config <path>", "config file path")
   .action(async (files: string[], options) => {
     const config = await loadConfig(options.config);
-    const opts = { ...config, ...options };
+    const opts = {
+      theme: options.theme ?? config.theme ?? "github-dark",
+      preset: options.preset ?? config.preset ?? "tutorial",
+      fps: options.fps ?? config.fps ?? "30",
+      width: options.width ?? config.width,
+      height: options.height ?? config.height,
+      output: options.output,
+    };
 
     const result = themeSchema.safeParse(opts.theme);
     if (!result.success) {
@@ -37,8 +44,23 @@ export const renderCommand = new Command("render")
 
     const preset =
       PRESETS[opts.preset as keyof typeof PRESETS] ?? PRESETS.tutorial;
-    const width = opts.width ? Number(opts.width) : preset.width;
-    const height = opts.height ? Number(opts.height) : preset.height;
+
+    const parseNumber = (
+      value: string | undefined,
+      name: string,
+    ): number | undefined => {
+      if (!value) return undefined;
+      const num = Number(value);
+      if (isNaN(num) || num <= 0) {
+        logger.error(`Invalid ${name}: ${value} (must be a positive number)`);
+        process.exit(1);
+      }
+      return num;
+    };
+
+    const width = parseNumber(opts.width, "width") ?? preset.width;
+    const height = parseNumber(opts.height, "height") ?? preset.height;
+    const fps = parseNumber(opts.fps, "fps") ?? 30;
 
     const props = JSON.stringify({
       theme: opts.theme,
@@ -50,29 +72,45 @@ export const renderCommand = new Command("render")
     logger.info(`Rendering with theme: ${opts.theme}`);
 
     try {
-      await $`bun remotionb render src/index.ts Main ${opts.output} --props=${props} --height=${height} --width=${width} --fps=${opts.fps}`;
-    } catch {
-      await cleanupFiles(files);
+      const result =
+        await $`bun remotionb render src/index.ts Main ${opts.output} --props=${props} --height=${height} --width=${width} --fps=${fps}`;
+
+      if (!result.exitCode || result.exitCode === 0) {
+        logger.success(`Video saved to ${opts.output}`);
+      } else {
+        throw new Error(`Render process exited with code ${result.exitCode}`);
+      }
+    } catch (error) {
       logger.error("Rendering failed");
-      process.exit(1);
+      if (error instanceof Error && error.message) {
+        logger.error(error.message);
+      }
+      throw error;
+    } finally {
+      await cleanupFiles(files);
     }
-
-    await cleanupFiles(files);
-
-    logger.success(`Video saved to ${opts.output}`);
   });
 
 async function prepareFiles(files: string[]) {
   await mkdir("public", { recursive: true });
-  for (let i = 0; i < files.length; i++) {
-    const ext = extname(files[i]);
-    await copyFile(files[i], `public/code${i + 1}${ext}`);
-  }
+
+  await Promise.all(
+    files.map(async (filePath, i) => {
+      const file = Bun.file(filePath);
+      if (!(await file.exists())) {
+        throw new Error(`File not found: ${filePath}`);
+      }
+      const ext = extname(filePath);
+      await copyFile(filePath, `public/code${i + 1}${ext}`);
+    }),
+  );
 }
 
 async function cleanupFiles(files: string[]) {
-  for (let i = 0; i < files.length; i++) {
-    const ext = extname(files[i]);
-    await rm(`public/code${i + 1}${ext}`, { force: true });
-  }
+  await Promise.all(
+    files.map(async (filePath, i) => {
+      const ext = extname(filePath);
+      await rm(`public/code${i + 1}${ext}`, { force: true });
+    }),
+  );
 }
