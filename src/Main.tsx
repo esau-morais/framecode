@@ -26,29 +26,27 @@ export const Main: React.FC<Props> = ({ steps, themeColors, codeWidth }) => {
     throw new Error("Theme colors are not defined");
   }
 
-  const outerStyle: React.CSSProperties = useMemo(() => {
+  const backgroundStyle: React.CSSProperties = useMemo(() => {
     return {
       backgroundColor: themeColors.background,
     };
   }, [themeColors]);
 
-  const style: React.CSSProperties = useMemo(() => {
-    return {
-      padding: `${verticalPadding}px 0px`,
-    };
-  }, []);
-
   return (
     <ThemeProvider themeColors={themeColors}>
-      <AbsoluteFill style={outerStyle}>
+      <AbsoluteFill style={backgroundStyle}>
         <AbsoluteFill
+          className="mx-auto"
           style={{
             width: codeWidth || "100%",
-            margin: "auto",
           }}
         >
           <ProgressBar steps={steps} />
-          <AbsoluteFill style={style}>
+          <AbsoluteFill
+            style={{
+              padding: `${verticalPadding}px 0px`,
+            }}
+          >
             <Series>
               {steps.map((step, index) => (
                 <Series.Sequence
