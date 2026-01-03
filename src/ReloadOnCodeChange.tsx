@@ -33,6 +33,7 @@ export const RefreshOnCodeChange: React.FC = () => {
     return () => {
       cancel();
     };
+    // oxlint-disable-next-line
   }, [files, env.isReadOnlyStudio]);
 
   return null;
