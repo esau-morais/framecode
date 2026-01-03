@@ -1,5 +1,6 @@
 import { Composition } from "remotion";
 import { Main } from "./Main";
+import "./index.css";
 
 import { calculateMetadata } from "./calculate-metadata/calculate-metadata";
 import { schema } from "./calculate-metadata/schema";
