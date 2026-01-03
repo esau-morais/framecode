@@ -7,11 +7,14 @@ import { useMemo } from "react";
 import { RefreshOnCodeChange } from "./ReloadOnCodeChange";
 import { verticalPadding } from "./font";
 
+import type { schema } from "./calculate-metadata/schema";
+import type { z } from "zod";
+
 export type Props = {
   steps: HighlightedCode[] | null;
   themeColors: ThemeColors | null;
   codeWidth: number | null;
-};
+} & z.infer<typeof schema>;
 
 export const Main: React.FC<Props> = ({ steps, themeColors, codeWidth }) => {
   if (!steps) {

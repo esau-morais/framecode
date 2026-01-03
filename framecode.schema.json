@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "type": "object",
+  "properties": {
+    "theme": {
+      "type": "string",
+      "enum": [
+        "github-dark",
+        "github-light",
+        "nord",
+        "dracula",
+        "monokai",
+        "tokyo-night",
+        "catppuccin-mocha",
+        "rose-pine",
+        "synthwave-84",
+        "material-theme-darker",
+        "one-dark-pro",
+        "vitesse-dark",
+        "vitesse-light",
+        "min-dark",
+        "min-light",
+        "night-owl",
+        "ayu-dark",
+        "gruvbox-dark-medium",
+        "gruvbox-light-medium",
+        "everforest-dark",
+        "everforest-light",
+        "kanagawa-wave",
+        "rose-pine-moon",
+        "rose-pine-dawn",
+        "catppuccin-latte",
+        "catppuccin-frappe",
+        "catppuccin-macchiato",
+        "github-dark-dimmed",
+        "github-dark-high-contrast",
+        "github-light-high-contrast",
+        "dark-plus",
+        "light-plus",
+        "poimandres",
+        "slack-dark",
+        "one-light",
+        "material-theme-lighter",
+        "material-theme-ocean",
+        "material-theme-palenight",
+        "dracula-soft",
+        "houston"
+      ],
+      "default": "github-dark"
+    },
+    "preset": {
+      "type": "string",
+      "enum": [
+        "tweet",
+        "tutorial",
+        "square"
+      ],
+      "default": "tutorial"
+    },
+    "fps": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 120,
+      "default": 30
+    },
+    "width": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "height": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "additionalProperties": false
+}
