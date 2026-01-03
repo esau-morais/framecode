@@ -32,7 +32,7 @@ export const renderCommand = new Command("render")
   .option("-o, --output <path>", "output file path", "output.mp4")
   .option("-t, --theme <name>", "syntax theme", "github-dark")
   .option("-p, --preset <name>", "tweet|tutorial|square", "tutorial")
-  .option("-a, --animation <name>", "morph|typewriter", "morph")
+  .option("-a, --animation <name>", "morph|typewriter|cascade", "morph")
   .option("--cps <number>", "chars per second (typewriter)", "30")
   .option("-f, --fps <number>", "frames per second", "30")
   .option("-c, --config <path>", "config file path")
@@ -51,9 +51,7 @@ Examples:
     const theme = options.theme ?? config.theme ?? "github-dark";
     const preset = options.preset ?? config.preset ?? "tutorial";
     const animation = options.animation ?? config.animation ?? "morph";
-    const charsPerSecond = Number(
-      options.charsPerSecond ?? config.charsPerSecond ?? 30,
-    );
+    const charsPerSecond = Number(options.cps ?? config.charsPerSecond ?? 30);
     const fps = Number(options.fps ?? config.fps ?? 30);
     const output = options.output;
 
@@ -65,7 +63,7 @@ Examples:
 
     if (!animationSchema.safeParse(animation).success) {
       logger.error(`Invalid animation: ${animation}`);
-      logger.info("Valid: morph, typewriter");
+      logger.info("Valid: morph, typewriter, cascade");
       process.exit(1);
     }
 
@@ -76,7 +74,7 @@ Examples:
     }
 
     if (isNaN(charsPerSecond) || charsPerSecond <= 0) {
-      logger.error(`Invalid chars-per-second: ${options.charsPerSecond}`);
+      logger.error(`Invalid chars-per-second: ${options.cps}`);
       process.exit(1);
     }
 

@@ -2,6 +2,7 @@ import { AbsoluteFill, Series, useVideoConfig } from "remotion";
 import { ProgressBar } from "./ProgressBar";
 import { CodeTransition } from "./CodeTransition";
 import { TypewriterTransition } from "./TypewriterTransition";
+import { CascadeTransition } from "./CascadeTransition";
 import { HighlightedCode } from "codehike/code";
 import { ThemeColors, ThemeProvider } from "./calculate-metadata/theme";
 import { useMemo } from "react";
@@ -59,31 +60,33 @@ export const Main: React.FC<Props> = ({
               padding: `${verticalPadding}px 0px`,
             }}
           >
-            {animation === "typewriter" ? (
-              <TypewriterTransition
-                code={steps[0]}
-                charsPerSecond={charsPerSecond}
-                fontSize={fontSize}
-              />
-            ) : (
-              <Series>
-                {steps.map((step, index) => (
-                  <Series.Sequence
-                    key={index}
-                    layout="none"
-                    durationInFrames={stepDuration}
-                    name={step.meta}
-                  >
+            <Series>
+              {steps.map((step, index) => (
+                <Series.Sequence
+                  key={index}
+                  layout="none"
+                  durationInFrames={stepDuration}
+                  name={step.meta}
+                >
+                  {animation === "typewriter" ? (
+                    <TypewriterTransition
+                      code={step}
+                      charsPerSecond={charsPerSecond}
+                      fontSize={fontSize}
+                    />
+                  ) : animation === "cascade" ? (
+                    <CascadeTransition code={step} fontSize={fontSize} />
+                  ) : (
                     <CodeTransition
                       oldCode={steps[index - 1]}
                       newCode={step}
                       durationInFrames={transitionDuration}
                       fontSize={fontSize}
                     />
-                  </Series.Sequence>
-                ))}
-              </Series>
-            )}
+                  )}
+                </Series.Sequence>
+              ))}
+            </Series>
           </AbsoluteFill>
         </AbsoluteFill>
       </AbsoluteFill>
