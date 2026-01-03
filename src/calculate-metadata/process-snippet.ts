@@ -1,7 +1,7 @@
 import { highlight } from "codehike/code";
 import { createTwoslashFromCDN } from "twoslash-cdn";
 import { PublicFolderFile } from "./get-files";
-import { Theme } from "./theme";
+import { Theme, loadTheme } from "./theme";
 import { CompilerOptions, JsxEmit, ModuleKind, ScriptTarget } from "typescript";
 
 const compilerOptions: CompilerOptions = {
@@ -26,13 +26,15 @@ export const processSnippet = async (step: PublicFolderFile, theme: Theme) => {
         })
       : null;
 
+  const shikiTheme = await loadTheme(theme);
+
   const highlighted = await highlight(
     {
       lang: extension,
       meta: "",
       value: twoslashResult ? twoslashResult.code : step.value,
     },
-    theme,
+    shikiTheme,
   );
 
   if (!twoslashResult) {
@@ -43,7 +45,7 @@ export const processSnippet = async (step: PublicFolderFile, theme: Theme) => {
   for (const { text, line, character, length } of twoslashResult.queries) {
     const codeblock = await highlight(
       { value: text, lang: "ts", meta: "callout" },
-      theme,
+      shikiTheme,
     );
     highlighted.annotations.push({
       name: "callout",

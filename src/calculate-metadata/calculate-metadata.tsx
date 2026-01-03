@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CalculateMetadataFunction } from "remotion";
-import { getThemeColors } from "@code-hike/lighter";
+import { getThemeColors } from "./theme";
 import { Props } from "../Main";
 import { schema } from "./schema";
 import { processSnippet } from "./process-snippet";
