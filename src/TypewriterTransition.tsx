@@ -36,6 +36,45 @@ export function flattenCode(code: HighlightedCode): CharInfo[] {
   return chars;
 }
 
+interface Segment {
+  text: string;
+  style: React.CSSProperties;
+  startIndex: number;
+  isNewline: boolean;
+}
+
+function groupCharsIntoSegments(chars: CharInfo[]): Segment[] {
+  const segments: Segment[] = [];
+  let i = 0;
+
+  while (i < chars.length) {
+    const { char, style } = chars[i];
+
+    if (char === "\n") {
+      segments.push({ text: "\n", style: {}, startIndex: i, isNewline: true });
+      i++;
+      continue;
+    }
+
+    let text = char;
+    const startIndex = i;
+    i++;
+
+    while (
+      i < chars.length &&
+      chars[i].char !== "\n" &&
+      chars[i].style.color === style.color
+    ) {
+      text += chars[i].char;
+      i++;
+    }
+
+    segments.push({ text, style, startIndex, isNewline: false });
+  }
+
+  return segments;
+}
+
 export function TypewriterTransition({
   code,
   charsPerSecond = 30,
@@ -50,6 +89,7 @@ export function TypewriterTransition({
   const themeColors = useThemeColors();
 
   const chars = useMemo(() => flattenCode(code), [code]);
+  const segments = useMemo(() => groupCharsIntoSegments(chars), [chars]);
   const totalChars = chars.length;
 
   const typingDuration = (totalChars / charsPerSecond) * fps;
@@ -67,35 +107,6 @@ export function TypewriterTransition({
     ? Math.floor(frame / blinkInterval) % 2 === 0
     : true;
 
-  const elements: React.ReactNode[] = [];
-  for (let i = 0; i < charsShown; i++) {
-    const { char, style } = chars[i];
-    if (char === "\n") {
-      elements.push(<br key={`br-${i}`} />);
-    } else {
-      elements.push(
-        <span key={i} style={style}>
-          {char}
-        </span>,
-      );
-    }
-  }
-
-  elements.push(
-    <span
-      key="cursor"
-      style={{
-        display: "inline-block",
-        width: "0.6em",
-        height: "1.2em",
-        backgroundColor: themeColors?.foreground ?? "currentColor",
-        opacity: cursorVisible ? 0.8 : 0,
-        verticalAlign: "text-bottom",
-        marginLeft: 2,
-      }}
-    />,
-  );
-
   return (
     <pre
       style={{
@@ -107,7 +118,50 @@ export function TypewriterTransition({
         whiteSpace: "pre",
       }}
     >
-      <code>{elements}</code>
+      <code>
+        {segments.map((segment, idx) => {
+          const segmentEnd = segment.startIndex + segment.text.length;
+
+          if (segment.startIndex >= charsShown) {
+            return null;
+          }
+
+          if (segment.isNewline) {
+            return <br key={idx} />;
+          }
+
+          const visibleLength = Math.min(
+            segment.text.length,
+            charsShown - segment.startIndex,
+          );
+
+          if (segmentEnd <= charsShown) {
+            return (
+              <span key={idx} style={segment.style}>
+                {segment.text}
+              </span>
+            );
+          }
+
+          return (
+            <span key={idx} style={segment.style}>
+              {segment.text.slice(0, visibleLength)}
+            </span>
+          );
+        })}
+        <span
+          key="cursor"
+          style={{
+            display: "inline-block",
+            width: "0.6em",
+            height: "1.2em",
+            backgroundColor: themeColors?.foreground ?? "currentColor",
+            opacity: cursorVisible ? 0.8 : 0,
+            verticalAlign: "text-bottom",
+            marginLeft: 2,
+          }}
+        />
+      </code>
     </pre>
   );
 }

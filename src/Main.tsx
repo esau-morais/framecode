@@ -3,6 +3,7 @@ import { ProgressBar } from "./ProgressBar";
 import { CodeTransition } from "./CodeTransition";
 import { TypewriterTransition } from "./TypewriterTransition";
 import { CascadeTransition } from "./CascadeTransition";
+import { FocusTransition } from "./FocusTransition";
 import { HighlightedCode } from "codehike/code";
 import { ThemeColors, ThemeProvider } from "./calculate-metadata/theme";
 import { useMemo } from "react";
@@ -76,6 +77,12 @@ export const Main: React.FC<Props> = ({
                     />
                   ) : animation === "cascade" ? (
                     <CascadeTransition code={step} fontSize={fontSize} />
+                  ) : animation === "focus" ? (
+                    <FocusTransition
+                      code={step}
+                      fontSize={fontSize}
+                      focusRegions={[{ startLine: 2, endLine: 3 }]}
+                    />
                   ) : (
                     <CodeTransition
                       oldCode={steps[index - 1]}
