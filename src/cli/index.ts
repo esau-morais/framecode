@@ -17,4 +17,4 @@ program.addCommand(renderCommand);
 program.addCommand(themesCommand);
 program.addCommand(initCommand);
 
-program.parse();
+program.parseAsync();

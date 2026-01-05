@@ -11,6 +11,13 @@ import {
 } from "../../calculate-metadata/schema";
 import { basename, join } from "path";
 import type { StaticFile } from "../../calculate-metadata/get-files";
+import {
+  expandGlobPatterns,
+  isInteractiveTerminal,
+  promptFileSelection,
+  scanCurrentDirectory,
+} from "../utils/files";
+import { processCode } from "../utils/process-code";
 
 const entryPoint = join(import.meta.dir, "../../index.ts");
 
@@ -31,7 +38,7 @@ async function readFiles(files: string[]): Promise<StaticFile[]> {
 
 export const renderCommand = new Command("render")
   .description("Render code files to video")
-  .argument("<files...>", "code files to render")
+  .argument("[files...]", "code files or glob patterns")
   .option("-o, --output <path>", "output file path", "output.mp4")
   .option("-t, --theme <name>", "syntax theme", "github-dark")
   .option("-p, --preset <name>", "tweet|tutorial|square", "tutorial")
@@ -39,16 +46,18 @@ export const renderCommand = new Command("render")
   .option("--cps <number>", "chars per second (typewriter)", "30")
   .option("-f, --fps <number>", "frames per second", "30")
   .option("-c, --config <path>", "config file path")
+  .option("-i, --interactive", "interactively select files")
   .addHelpText(
     "after",
     `
 Examples:
   $ framecode render code.ts
-  $ framecode render code.ts -t github-dark -p tweet -a typewriter
-  $ framecode render file1.ts file2.ts -o video.mp4
-  $ framecode render code.ts --cps 50 -a typewriter`,
+  $ framecode render "src/**/*.ts"
+  $ framecode render "src/*.ts" "!src/*.test.ts"
+  $ framecode render src/ --interactive
+  $ framecode render`,
   )
-  .action(async (files: string[], options) => {
+  .action(async (filesArg: string[], options) => {
     const config = await loadConfig(options.config);
 
     const theme = options.theme ?? config.theme ?? "github-dark";
@@ -86,20 +95,65 @@ Examples:
       process.exit(1);
     }
 
+    let files: string[];
+    const needsInteractive = filesArg.length === 0 || options.interactive;
+
+    if (filesArg.length === 0) {
+      files = await scanCurrentDirectory();
+      if (files.length === 0) {
+        logger.error("No code files found in current directory");
+        process.exit(1);
+      }
+    } else {
+      files = await expandGlobPatterns(filesArg);
+      if (files.length === 0) {
+        logger.error("No files matched the provided patterns");
+        process.exit(1);
+      }
+    }
+
+    if (needsInteractive) {
+      if (isInteractiveTerminal()) {
+        files = await promptFileSelection(files);
+      } else {
+        logger.warn(
+          `Non-interactive mode: using all ${files.length} matched files`,
+        );
+      }
+    }
+
+    if (files.length === 0) {
+      logger.error("No files selected");
+      process.exit(1);
+    }
+
     const staticFiles = await readFiles(files);
     const presetDims =
       presetDimensions[preset as keyof typeof presetDimensions];
+
+    logger.info(`Rendering ${files.length} file(s) with ${theme} theme`);
+    logger.info(`Preset: ${preset} (${presetDims.width}x${presetDims.height})`);
+
+    const processProgress = new ProgressBar("Processing");
+    const processed = await processCode(
+      staticFiles,
+      theme,
+      animation,
+      charsPerSecond,
+      presetDims.width,
+      presetDims.height,
+    );
+    processProgress.update(1);
 
     const inputProps = {
       theme,
       preset,
       animation,
       charsPerSecond,
-      files: staticFiles,
+      steps: processed.steps,
+      themeColors: processed.themeColors,
+      codeWidth: processed.codeWidth,
     };
-
-    logger.info(`Rendering ${files.length} file(s) with ${theme} theme`);
-    logger.info(`Preset: ${preset} (${presetDims.width}x${presetDims.height})`);
 
     try {
       const bundleProgress = new ProgressBar("Bundling");
@@ -112,6 +166,8 @@ Examples:
         serveUrl: bundleLocation,
         id: "Main",
         inputProps,
+        logLevel: "error",
+        onBrowserLog: () => {},
       });
 
       const renderProgress = new ProgressBar("Rendering");
@@ -124,6 +180,8 @@ Examples:
         },
         serveUrl: bundleLocation,
         codec: "h264",
+        logLevel: "error",
+        onBrowserLog: () => {},
         outputLocation: output,
         inputProps,
         onProgress: ({ progress }) => renderProgress.update(progress),

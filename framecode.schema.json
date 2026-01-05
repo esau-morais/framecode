@@ -50,11 +50,7 @@
     },
     "preset": {
       "type": "string",
-      "enum": [
-        "tweet",
-        "tutorial",
-        "square"
-      ],
+      "enum": ["tweet", "tutorial", "square"],
       "default": "tutorial"
     },
     "fps": {
