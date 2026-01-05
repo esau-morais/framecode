@@ -1,6 +1,6 @@
 {
 	"name": "framecode",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "CLI-first video generator that turns code into Twitter-ready videos",
 	"publishConfig": {
 		"access": "public"
