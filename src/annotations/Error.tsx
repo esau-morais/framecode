@@ -68,7 +68,7 @@ export const errorMessage: AnnotationHandler = {
             color: themeColors.editor.foreground,
           }}
         >
-          {annotation.data.children || annotation.query}
+          {annotation.data?.children || annotation.query}
         </div>
       </>
     );

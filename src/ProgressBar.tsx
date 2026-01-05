@@ -1,6 +1,8 @@
 import { useMemo } from "react";
-import { useCurrentFrame, useVideoConfig } from "remotion";
+import { useCurrentFrame } from "remotion";
 import { useThemeColors } from "./calculate-metadata/theme";
+import { horizontalPadding } from "./font";
+import { CodeStep } from "./Main";
 import React from "react";
 
 const Step: React.FC<{
@@ -42,21 +44,29 @@ const Step: React.FC<{
   );
 };
 
-export function ProgressBar({ steps }: { readonly steps: unknown[] }) {
+export function ProgressBar({ steps }: { readonly steps: CodeStep[] }) {
   const frame = useCurrentFrame();
-  const { durationInFrames } = useVideoConfig();
 
-  const stepDuration = durationInFrames / steps.length;
-  const currentStep = Math.floor(frame / stepDuration);
-  const currentStepProgress = (frame % stepDuration) / stepDuration;
+  const { currentStep, currentStepProgress } = useMemo(() => {
+    let accumulated = 0;
+    for (let i = 0; i < steps.length; i++) {
+      const stepEnd = accumulated + steps[i].durationInFrames;
+      if (frame < stepEnd) {
+        const progress = (frame - accumulated) / steps[i].durationInFrames;
+        return { currentStep: i, currentStepProgress: progress };
+      }
+      accumulated = stepEnd;
+    }
+    return { currentStep: steps.length - 1, currentStepProgress: 1 };
+  }, [frame, steps]);
 
   const container: React.CSSProperties = useMemo(() => {
     return {
       position: "absolute",
       top: 48,
       height: 6,
-      left: 0,
-      right: 0,
+      left: horizontalPadding,
+      right: horizontalPadding,
       display: "flex",
       gap: 12,
     };

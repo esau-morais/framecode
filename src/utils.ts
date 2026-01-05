@@ -20,7 +20,9 @@ export function applyStyle({
   if (color && color[0].length && color[1].length) {
     element.style.color = interpolateColors(progress, [0, 1], color);
   }
-  const x = translateX ? interpolate(progress, [0, 1], translateX) : 0;
-  const y = translateY ? interpolate(progress, [0, 1], translateY) : 0;
+  const hasValidX = translateX && translateX.every((v) => Number.isFinite(v));
+  const hasValidY = translateY && translateY.every((v) => Number.isFinite(v));
+  const x = hasValidX ? interpolate(progress, [0, 1], translateX) : 0;
+  const y = hasValidY ? interpolate(progress, [0, 1], translateY) : 0;
   element.style.translate = `${x}px ${y}px`;
 }

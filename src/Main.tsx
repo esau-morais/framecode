@@ -1,4 +1,4 @@
-import { AbsoluteFill, Series, useVideoConfig } from "remotion";
+import { AbsoluteFill, Series } from "remotion";
 import { ProgressBar } from "./ProgressBar";
 import { CodeTransition } from "./CodeTransition";
 import { TypewriterTransition } from "./TypewriterTransition";
@@ -8,16 +8,21 @@ import { HighlightedCode } from "codehike/code";
 import { ThemeColors, ThemeProvider } from "./calculate-metadata/theme";
 import { useMemo } from "react";
 import { RefreshOnCodeChange } from "./ReloadOnCodeChange";
-import { verticalPadding } from "./font";
+import { verticalPadding, horizontalPadding } from "./font";
 
 import type { schema } from "./calculate-metadata/schema";
 import type { z } from "zod";
 
+export type CodeStep = {
+  code: HighlightedCode;
+  fontSize: number;
+  durationInFrames: number;
+};
+
 export type Props = {
-  steps: HighlightedCode[] | null;
+  steps: CodeStep[] | null;
   themeColors: ThemeColors | null;
   codeWidth: number | null;
-  fontSize?: number;
 } & z.infer<typeof schema>;
 
 export const Main: React.FC<Props> = ({
@@ -26,14 +31,11 @@ export const Main: React.FC<Props> = ({
   codeWidth,
   animation,
   charsPerSecond,
-  fontSize,
 }) => {
   if (!steps) {
     throw new Error("Steps are not defined");
   }
 
-  const { durationInFrames } = useVideoConfig();
-  const stepDuration = durationInFrames / steps.length;
   const transitionDuration = 30;
 
   if (!themeColors) {
@@ -49,52 +51,50 @@ export const Main: React.FC<Props> = ({
   return (
     <ThemeProvider themeColors={themeColors}>
       <AbsoluteFill style={backgroundStyle}>
+        <ProgressBar steps={steps} />
         <AbsoluteFill
           className="mx-auto"
           style={{
             width: codeWidth || "100%",
+            padding: `${verticalPadding}px ${horizontalPadding}px`,
           }}
         >
-          <ProgressBar steps={steps} />
-          <AbsoluteFill
-            style={{
-              padding: `${verticalPadding}px 0px`,
-            }}
-          >
-            <Series>
-              {steps.map((step, index) => (
-                <Series.Sequence
-                  key={index}
-                  layout="none"
-                  durationInFrames={stepDuration}
-                  name={step.meta}
-                >
-                  {animation === "typewriter" ? (
-                    <TypewriterTransition
-                      code={step}
-                      charsPerSecond={charsPerSecond}
-                      fontSize={fontSize}
-                    />
-                  ) : animation === "cascade" ? (
-                    <CascadeTransition code={step} fontSize={fontSize} />
-                  ) : animation === "focus" ? (
-                    <FocusTransition
-                      code={step}
-                      fontSize={fontSize}
-                      focusRegions={[{ startLine: 2, endLine: 3 }]}
-                    />
-                  ) : (
-                    <CodeTransition
-                      oldCode={steps[index - 1]}
-                      newCode={step}
-                      durationInFrames={transitionDuration}
-                      fontSize={fontSize}
-                    />
-                  )}
-                </Series.Sequence>
-              ))}
-            </Series>
-          </AbsoluteFill>
+          <Series>
+            {steps.map((step, index) => (
+              <Series.Sequence
+                key={index}
+                layout="none"
+                durationInFrames={step.durationInFrames}
+                name={step.code.meta}
+              >
+                {animation === "typewriter" ? (
+                  <TypewriterTransition
+                    code={step.code}
+                    charsPerSecond={charsPerSecond}
+                    fontSize={step.fontSize}
+                  />
+                ) : animation === "cascade" ? (
+                  <CascadeTransition
+                    code={step.code}
+                    fontSize={step.fontSize}
+                  />
+                ) : animation === "focus" ? (
+                  <FocusTransition
+                    code={step.code}
+                    fontSize={step.fontSize}
+                    focusRegions={[{ startLine: 2, endLine: 3 }]}
+                  />
+                ) : (
+                  <CodeTransition
+                    oldCode={steps[index - 1]?.code ?? null}
+                    newCode={step.code}
+                    durationInFrames={transitionDuration}
+                    fontSize={step.fontSize}
+                  />
+                )}
+              </Series.Sequence>
+            ))}
+          </Series>
         </AbsoluteFill>
       </AbsoluteFill>
       <RefreshOnCodeChange />
