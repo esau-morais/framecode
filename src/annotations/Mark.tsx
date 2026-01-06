@@ -13,7 +13,10 @@ export const mark: AnnotationHandler = {
       extrapolateRight: "clamp",
     });
 
-    const color = annotation.query || themeColors.editor.lineHighlightBackground || "rgb(14 165 233)";
+    const color =
+      annotation.query ||
+      themeColors.editor.lineHighlightBackground ||
+      "rgb(14 165 233)";
 
     return (
       <div
@@ -36,14 +39,16 @@ export const mark: AnnotationHandler = {
       extrapolateRight: "clamp",
     });
 
-    const color = annotation?.query || themeColors.editor.lineHighlightBackground || "rgb(14 165 233)";
+    const color =
+      annotation?.query ||
+      themeColors.editor.lineHighlightBackground ||
+      "rgb(14 165 233)";
 
     return (
       <span
         style={{
           opacity,
-          outline: `solid 1px rgb(from ${color} r g b / 0.5)`,
-          background: `rgb(from ${color} r g b / 0.13)`,
+          background: `rgb(from ${color} r g b / 0.2)`,
           borderRadius: "2px",
           padding: "0 2px",
         }}

@@ -73,7 +73,10 @@ export function CascadeTransition({
     () => ({
       name: "mark",
       AnnotatedLine: ({ annotation, ...props }) => {
-        const color = annotation.query || themeColors.editor.lineHighlightBackground || "rgb(14 165 233)";
+        const color =
+          annotation.query ||
+          themeColors.editor.lineHighlightBackground ||
+          "rgb(14 165 233)";
 
         return (
           <div
@@ -87,7 +90,10 @@ export function CascadeTransition({
         );
       },
       Inline: ({ annotation, children }) => {
-        const color = annotation?.query || themeColors.editor.lineHighlightBackground || "rgb(14 165 233)";
+        const color =
+          annotation?.query ||
+          themeColors.editor.lineHighlightBackground ||
+          "rgb(14 165 233)";
         return (
           <span
             style={{
