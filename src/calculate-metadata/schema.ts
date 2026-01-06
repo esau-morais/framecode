@@ -3,10 +3,10 @@ import { themeSchema } from "./theme";
 
 export { themeSchema };
 
-export const presetSchema = z.enum(["tweet", "tutorial", "square"]);
+export const presetSchema = z.enum(["post", "tutorial", "square"]);
 
 export const presetDimensions = {
-  tweet: { width: 720, height: 1280 },
+  post: { width: 720, height: 1280 },
   tutorial: { width: 1920, height: 1080 },
   square: { width: 1080, height: 1080 },
 } as const;

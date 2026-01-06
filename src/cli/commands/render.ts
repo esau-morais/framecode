@@ -41,7 +41,7 @@ export const renderCommand = new Command("render")
   .argument("[files...]", "code files or glob patterns")
   .option("-o, --output <path>", "output file path", "output.mp4")
   .option("-t, --theme <name>", "syntax theme", "github-dark")
-  .option("-p, --preset <name>", "tweet|tutorial|square", "tutorial")
+  .option("-p, --preset <name>", "post|tutorial|square", "tutorial")
   .option("-a, --animation <name>", "morph|typewriter|cascade", "morph")
   .option("--cps <number>", "chars per second (typewriter)", "30")
   .option("-f, --fps <number>", "frames per second", "30")
@@ -81,7 +81,7 @@ Examples:
 
     if (!presetSchema.safeParse(preset).success) {
       logger.error(`Invalid preset: ${preset}`);
-      logger.info("Valid: tweet (9:16), tutorial (16:9), square (1:1)");
+      logger.info("Valid: post (9:16), tutorial (16:9), square (1:1)");
       process.exit(1);
     }
 

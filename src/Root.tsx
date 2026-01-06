@@ -27,7 +27,7 @@ export const RemotionRoot = () => {
       />
       <Folder name="Presets">
         <Composition
-          id="Preset-Tweet"
+          id="Preset-Post"
           component={Main}
           width={720}
           height={1280}
@@ -38,7 +38,7 @@ export const RemotionRoot = () => {
             themeColors: null,
             codeWidth: null,
             theme: "github-dark" as const,
-            preset: "tweet" as const,
+            preset: "post" as const,
             animation: "morph" as const,
             charsPerSecond: 30,
           }}

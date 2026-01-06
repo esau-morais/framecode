@@ -8,9 +8,7 @@ const program = new Command();
 
 program
   .name("framecode")
-  .description(
-    "CLI-first video generator that turns code into Twitter-ready videos",
-  )
+  .description("CLI-first video generator that turns code into videos")
   .version("0.1.0");
 
 program.addCommand(renderCommand);

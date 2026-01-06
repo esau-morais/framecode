@@ -15,7 +15,7 @@ const jsonSchema = {
     },
     preset: {
       type: "string",
-      enum: ["tweet", "tutorial", "square"],
+      enum: ["post", "tutorial", "square"],
       default: "tutorial",
     },
     fps: {
