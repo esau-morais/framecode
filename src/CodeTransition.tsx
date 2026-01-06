@@ -10,7 +10,7 @@ import {
 } from "codehike/utils/token-transitions";
 import { applyStyle } from "./utils";
 import { callout } from "./annotations/Callout";
-
+import { mark } from "./annotations/Mark";
 import { tokenTransitions } from "./annotations/InlineToken";
 import { errorInline, errorMessage } from "./annotations/Error";
 import { fontFamily, fontSize as baseFontSize, tabSize } from "./font";
@@ -82,7 +82,7 @@ export function CodeTransition({
   });
 
   const handlers: AnnotationHandler[] = useMemo(() => {
-    return [tokenTransitions, callout, errorInline, errorMessage];
+    return [tokenTransitions, mark, callout, errorInline, errorMessage];
   }, []);
 
   const style: React.CSSProperties = useMemo(() => {
