@@ -176,6 +176,12 @@ function getFileSize(filePath: string): string {
   }
 }
 
+const MAX_SCAN_DEPTH = 5;
+
+function getDepth(filePath: string): number {
+  return filePath.split("/").length - 1;
+}
+
 export async function scanCurrentDirectory(): Promise<string[]> {
   const glob = new Glob(`**/${CODE_EXTENSIONS}`);
   const files: string[] = [];
@@ -186,6 +192,7 @@ export async function scanCurrentDirectory(): Promise<string[]> {
     onlyFiles: true,
     dot: false,
   })) {
+    if (getDepth(file) > MAX_SCAN_DEPTH) continue;
     if (!shouldIgnore(file, ignorePatterns)) {
       files.push(file);
     }
