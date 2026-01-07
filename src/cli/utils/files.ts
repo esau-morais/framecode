@@ -1,7 +1,7 @@
 import { Glob } from "bun";
 
 const CODE_EXTENSIONS =
-  "*.{ts,tsx,js,jsx,mjs,cjs,py,rb,go,rs,java,kt,swift,c,cpp,h,hpp,cs,php,vue,svelte}";
+  "*.{ts,tsx,js,jsx,mjs,cjs,py,rb,go,rs,java,kt,swift,c,cpp,h,hpp,cs,php,vue,svelte,sh,bash,zsh,json,yaml,yml,toml,md,mdx,sql,graphql,prisma,dockerfile}";
 
 const DEFAULT_IGNORES = [
   "node_modules",

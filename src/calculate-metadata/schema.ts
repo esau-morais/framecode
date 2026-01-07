@@ -11,12 +11,7 @@ export const presetDimensions = {
   square: { width: 1080, height: 1080 },
 } as const;
 
-export const animationSchema = z.enum([
-  "morph",
-  "typewriter",
-  "cascade",
-  "focus",
-]);
+export const animationSchema = z.enum(["morph", "typewriter", "cascade"]);
 
 export const fileSchema = z.object({
   filename: z.string(),

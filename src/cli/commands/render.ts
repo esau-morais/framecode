@@ -51,7 +51,7 @@ export const renderCommand = new Command("render")
   .option("-o, --output <path>", "output file path", "output.mp4")
   .option("-t, --theme <name>", "syntax theme")
   .option("-p, --preset <name>", "post|tutorial|square")
-  .option("-a, --animation <name>", "morph|typewriter|cascade|focus")
+  .option("-a, --animation <name>", "morph|typewriter|cascade")
   .option("--cps <number>", "chars per second (typewriter)", "30")
   .option("-f, --fps <number>", "frames per second", "30")
   .option("-c, --config <path>", "config file path")
@@ -142,7 +142,7 @@ Examples:
 
     if (!animationSchema.safeParse(animation).success) {
       logger.error(`Invalid animation: ${animation}`);
-      logger.info("Valid: morph, typewriter, cascade, focus");
+      logger.info("Valid: morph, typewriter, cascade");
       process.exit(1);
     }
 

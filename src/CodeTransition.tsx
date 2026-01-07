@@ -1,8 +1,6 @@
-import { Easing, interpolate, useDelayRender } from "remotion";
-import { useCurrentFrame } from "remotion";
+import { Easing, interpolate, useDelayRender, useCurrentFrame } from "remotion";
 import { Pre, HighlightedCode, AnnotationHandler } from "codehike/code";
 import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
-
 import {
   calculateTransitions,
   getStartingSnapshot,
@@ -10,7 +8,8 @@ import {
 } from "codehike/utils/token-transitions";
 import { applyStyle } from "./utils";
 import { callout } from "./annotations/Callout";
-import { mark } from "./annotations/Mark";
+import { useMorphMarkHandler } from "./annotations/Mark";
+import { useFocusHandler } from "./annotations/Focus";
 import { tokenTransitions } from "./annotations/InlineToken";
 import { errorInline, errorMessage } from "./annotations/Error";
 import { fontFamily, fontSize as baseFontSize, tabSize } from "./font";
@@ -62,38 +61,43 @@ export function CodeTransition({
         frame,
         [delay, delay + duration],
         [0, 1],
-        {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-        },
+        { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
       );
       const progress = interpolate(linearProgress, [0, 1], [0, 1], {
         easing: Easing.bezier(0.17, 0.67, 0.76, 0.91),
       });
 
-      applyStyle({
-        element,
-        keyframes,
-        progress,
-        linearProgress,
-      });
+      applyStyle({ element, keyframes, progress, linearProgress });
     });
     continueRender(handle);
   });
 
-  const handlers: AnnotationHandler[] = useMemo(() => {
-    return [tokenTransitions, mark, callout, errorInline, errorMessage];
-  }, []);
+  const markHandler = useMorphMarkHandler();
 
-  const style: React.CSSProperties = useMemo(() => {
-    return {
+  const focusHandler = useFocusHandler(newCode);
+
+  const handlers: AnnotationHandler[] = useMemo(
+    () => [
+      tokenTransitions,
+      markHandler,
+      focusHandler,
+      callout,
+      errorInline,
+      errorMessage,
+    ],
+    [markHandler, focusHandler],
+  );
+
+  const style: React.CSSProperties = useMemo(
+    () => ({
       position: "relative",
       fontSize: fontSize ?? baseFontSize,
       lineHeight: 1.5,
       fontFamily,
       tabSize,
-    };
-  }, [fontSize]);
+    }),
+    [fontSize],
+  );
 
   return <Pre ref={ref} code={code} handlers={handlers} style={style} />;
 }

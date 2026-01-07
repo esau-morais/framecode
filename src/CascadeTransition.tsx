@@ -7,7 +7,8 @@ import {
   InnerLine,
 } from "codehike/code";
 import { fontFamily, fontSize as baseFontSize, tabSize } from "./font";
-import { mark } from "./annotations/Mark";
+import { useMarkHandler } from "./annotations/Mark";
+import { useFocusHandler } from "./annotations/Focus";
 
 type TimingMode = "spring" | "linear";
 
@@ -29,12 +30,7 @@ export function CascadeTransition({
     (lineNum: number) => {
       const delay = (lineNum - 1) * staggerDelay;
       return timing === "spring"
-        ? spring({
-            frame,
-            fps,
-            delay,
-            config: { damping: 20, stiffness: 100 },
-          })
+        ? spring({ frame, fps, delay, config: { damping: 20, stiffness: 100 } })
         : interpolate(frame, [delay, delay + 15], [0, 1], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
@@ -47,8 +43,7 @@ export function CascadeTransition({
     () => ({
       name: "cascade",
       Line: (props) => {
-        const { lineNumber } = props;
-        const progress = getLineProgress(lineNumber);
+        const progress = getLineProgress(props.lineNumber);
         const translateY = interpolate(progress, [0, 1], [10, 0]);
 
         return (
@@ -68,7 +63,14 @@ export function CascadeTransition({
     [getLineProgress],
   );
 
-  const handlers = useMemo(() => [cascadeHandler, mark], [cascadeHandler]);
+  const markHandler = useMarkHandler(getLineProgress);
+
+  const focusHandler = useFocusHandler(code);
+
+  const handlers = useMemo(
+    () => [cascadeHandler, markHandler, focusHandler],
+    [cascadeHandler, markHandler, focusHandler],
+  );
 
   const style: React.CSSProperties = useMemo(
     () => ({

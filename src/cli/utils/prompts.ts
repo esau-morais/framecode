@@ -101,9 +101,7 @@ export async function runInteractive(
                 ? "smooth transitions"
                 : a === "typewriter"
                   ? "character reveal"
-                  : a === "cascade"
-                    ? "line-by-line"
-                    : "spotlight effect",
+                  : "line-by-line",
           })),
         }),
 
