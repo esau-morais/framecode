@@ -1,60 +1,63 @@
 {
-	"name": "framecode",
-	"version": "0.1.7",
-	"private": false,
-	"description": "CLI-first video generator that turns code snippets into videos",
-	"license": "MIT",
-	"author": "Esau Morais <esaumorais7@gmail.com> (https://emots.dev)",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/esau-morais/framecode.git"
-	},
-	"bin": {
-		"framecode": "src/cli/index.ts"
-	},
-	"files": ["framecode.schema.json", "src"],
-	"type": "module",
-	"module": "src/index.ts",
-	"publishConfig": {
-		"access": "public"
-	},
-	"scripts": {
-		"dev": "remotion studio",
-		"build": "remotion bundle",
-		"upgrade": "remotion upgrade",
-		"typecheck": "tsc --noEmit",
-		"lint": "oxlint",
-		"lint:fix": "oxfmt",
-		"prepublishOnly": "bun run typecheck && bun run lint && bun run build"
-	},
-	"dependencies": {
-		"@clack/prompts": "^1.0.0-alpha.9",
-		"@remotion/bundler": "4.0.399",
-		"@remotion/cli": "4.0.399",
-		"@remotion/google-fonts": "4.0.399",
-		"@remotion/layout-utils": "4.0.399",
-		"@remotion/renderer": "4.0.399",
-		"@remotion/studio": "4.0.399",
-		"@remotion/tailwind-v4": "^4.0.399",
-		"chalk": "^5.6.2",
-		"codehike": "1.0.7",
-		"commander": "^14.0.2",
-		"polished": "4.3.1",
-		"react": "19.2.3",
-		"react-dom": "19.2.3",
-		"remotion": "4.0.399",
-		"shiki": "^3.20.0",
-		"tailwindcss": "^4.1.18",
-		"twoslash": "^0.3.6",
-		"zod": "3.22.3"
-	},
-	"devDependencies": {
-		"@remotion/eslint-plugin": "^4.0.399",
-		"@types/bun": "^1.3.5",
-		"@types/react": "19.2.7",
-		"@types/web": "0.0.312",
-		"oxfmt": "^0.22.0",
-		"oxlint": "^1.36.0",
-		"typescript": "5.9.3"
-	}
+  "name": "framecode",
+  "version": "0.1.8",
+  "private": false,
+  "description": "CLI-first video generator that turns code snippets into videos",
+  "license": "MIT",
+  "author": "Esau Morais <esaumorais7@gmail.com> (https://emots.dev)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/esau-morais/framecode.git"
+  },
+  "bin": {
+    "framecode": "src/cli/index.ts"
+  },
+  "files": [
+    "framecode.schema.json",
+    "src"
+  ],
+  "type": "module",
+  "module": "src/index.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "dev": "remotion studio",
+    "build": "remotion bundle",
+    "upgrade": "remotion upgrade",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "lint:fix": "oxfmt",
+    "prepublishOnly": "bun run typecheck && bun run lint && bun run build"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.0.0-alpha.9",
+    "@remotion/bundler": "4.0.399",
+    "@remotion/cli": "4.0.399",
+    "@remotion/google-fonts": "4.0.399",
+    "@remotion/layout-utils": "4.0.399",
+    "@remotion/renderer": "4.0.399",
+    "@remotion/studio": "4.0.399",
+    "@remotion/tailwind-v4": "^4.0.399",
+    "chalk": "^5.6.2",
+    "codehike": "1.0.7",
+    "commander": "^14.0.2",
+    "polished": "4.3.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.399",
+    "shiki": "^3.20.0",
+    "tailwindcss": "^4.1.18",
+    "twoslash": "^0.3.6",
+    "zod": "3.22.3"
+  },
+  "devDependencies": {
+    "@remotion/eslint-plugin": "^4.0.399",
+    "@types/bun": "^1.3.5",
+    "@types/react": "19.2.7",
+    "@types/web": "0.0.312",
+    "oxfmt": "^0.22.0",
+    "oxlint": "^1.36.0",
+    "typescript": "5.9.3"
+  }
 }

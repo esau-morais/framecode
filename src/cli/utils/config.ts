@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { homedir } from "os";
-import { join } from "path";
+import { join, dirname } from "path";
+import { mkdir } from "fs/promises";
 import {
   themeSchema,
   animationSchema,
   presetSchema,
+  stepConfigSchema,
 } from "../../calculate-metadata/schema";
 
 const configSchema = z.object({
@@ -13,6 +15,7 @@ const configSchema = z.object({
   animation: animationSchema.optional(),
   charsPerSecond: z.number().int().positive().optional(),
   fps: z.number().int().min(1).max(120).optional(),
+  stepConfigs: z.array(stepConfigSchema).optional(),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -56,4 +59,23 @@ export function getConfigPath(local: boolean): string {
     return "./framecode.json";
   }
   return join(homedir(), ".config", "framecode", "config.json");
+}
+
+export async function saveConfig(
+  config: Partial<Config>,
+  local: boolean = false,
+): Promise<boolean> {
+  const configPath = getConfigPath(local);
+
+  try {
+    await mkdir(dirname(configPath), { recursive: true });
+
+    const existingConfig = await loadConfig(configPath);
+    const merged = { ...existingConfig, ...config };
+
+    await Bun.write(configPath, JSON.stringify(merged, null, 2));
+    return true;
+  } catch {
+    return false;
+  }
 }

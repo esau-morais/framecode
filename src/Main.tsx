@@ -10,28 +10,26 @@ import { useMemo } from "react";
 import { RefreshOnCodeChange } from "./ReloadOnCodeChange";
 import { verticalPadding, horizontalPadding } from "./font";
 
-import type { schema } from "./calculate-metadata/schema";
+import type { animationSchema, schema } from "./calculate-metadata/schema";
 import type { z } from "zod";
+
+export type Animation = z.infer<typeof animationSchema>;
 
 export type CodeStep = {
   code: HighlightedCode;
   fontSize: number;
   durationInFrames: number;
+  animation: Animation;
+  charsPerSecond: number;
 };
 
 export type Props = {
   steps: CodeStep[] | null;
   themeColors: ThemeColors | null;
   codeWidth: number | null;
-} & z.infer<typeof schema>;
+} & Omit<z.infer<typeof schema>, "steps">;
 
-export const Main: React.FC<Props> = ({
-  steps,
-  themeColors,
-  codeWidth,
-  animation,
-  charsPerSecond,
-}) => {
+export const Main: React.FC<Props> = ({ steps, themeColors, codeWidth }) => {
   if (!steps) {
     throw new Error("Steps are not defined");
   }
@@ -67,18 +65,18 @@ export const Main: React.FC<Props> = ({
                 durationInFrames={step.durationInFrames}
                 name={step.code.meta}
               >
-                {animation === "typewriter" ? (
+                {step.animation === "typewriter" ? (
                   <TypewriterTransition
                     code={step.code}
-                    charsPerSecond={charsPerSecond}
+                    charsPerSecond={step.charsPerSecond}
                     fontSize={step.fontSize}
                   />
-                ) : animation === "cascade" ? (
+                ) : step.animation === "cascade" ? (
                   <CascadeTransition
                     code={step.code}
                     fontSize={step.fontSize}
                   />
-                ) : animation === "focus" ? (
+                ) : step.animation === "focus" ? (
                   <FocusTransition
                     code={step.code}
                     fontSize={step.fontSize}

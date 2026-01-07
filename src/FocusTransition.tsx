@@ -7,6 +7,7 @@ import {
   InnerLine,
 } from "codehike/code";
 import { fontFamily, fontSize as baseFontSize, tabSize } from "./font";
+import { mark } from "./annotations/Mark";
 
 export interface FocusRegion {
   startLine: number;
@@ -89,5 +90,5 @@ export function FocusTransition({
     [fontSize],
   );
 
-  return <Pre code={code} handlers={[focusHandler]} style={style} />;
+  return <Pre code={code} handlers={[focusHandler, mark]} style={style} />;
 }

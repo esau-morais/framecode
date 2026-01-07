@@ -7,7 +7,7 @@ import {
   InnerLine,
 } from "codehike/code";
 import { fontFamily, fontSize as baseFontSize, tabSize } from "./font";
-import { useThemeColors } from "./calculate-metadata/theme";
+import { mark } from "./annotations/Mark";
 
 type TimingMode = "spring" | "linear";
 
@@ -24,7 +24,6 @@ export function CascadeTransition({
 }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const themeColors = useThemeColors();
 
   const getLineProgress = useCallback(
     (lineNum: number) => {
@@ -69,52 +68,7 @@ export function CascadeTransition({
     [getLineProgress],
   );
 
-  const markHandler: AnnotationHandler = useMemo(
-    () => ({
-      name: "mark",
-      AnnotatedLine: ({ annotation, ...props }) => {
-        const color =
-          annotation.query ||
-          themeColors.editor.lineHighlightBackground ||
-          "rgb(14 165 233)";
-
-        return (
-          <div
-            style={{
-              borderLeft: `solid 2px ${color}`,
-              backgroundColor: `rgb(from ${color} r g b / 0.1)`,
-            }}
-          >
-            <InnerLine merge={props} style={{ padding: "0 0.5ch" }} />
-          </div>
-        );
-      },
-      Inline: ({ annotation, children }) => {
-        const color =
-          annotation?.query ||
-          themeColors.editor.lineHighlightBackground ||
-          "rgb(14 165 233)";
-        return (
-          <span
-            style={{
-              outline: `solid 1px rgb(from ${color} r g b / 0.5)`,
-              background: `rgb(from ${color} r g b / 0.13)`,
-              borderRadius: "2px",
-              padding: "0 2px",
-            }}
-          >
-            {children}
-          </span>
-        );
-      },
-    }),
-    [themeColors],
-  );
-
-  const handlers = useMemo(
-    () => [cascadeHandler, markHandler],
-    [cascadeHandler, markHandler],
-  );
+  const handlers = useMemo(() => [cascadeHandler, mark], [cascadeHandler]);
 
   const style: React.CSSProperties = useMemo(
     () => ({

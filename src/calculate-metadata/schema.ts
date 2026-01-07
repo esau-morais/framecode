@@ -23,10 +23,17 @@ export const fileSchema = z.object({
   value: z.string(),
 });
 
+export const stepConfigSchema = z.object({
+  file: z.string(),
+  animation: animationSchema.optional(),
+  charsPerSecond: z.number().int().positive().optional(),
+});
+
 export const schema = z.object({
   theme: themeSchema,
   preset: presetSchema.default("tutorial"),
   animation: animationSchema.default("morph"),
   charsPerSecond: z.number().int().positive().default(30),
   files: z.array(fileSchema).optional(),
+  stepConfigs: z.array(stepConfigSchema).optional(),
 });

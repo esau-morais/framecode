@@ -1,6 +1,33 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema",
   "type": "object",
+  "definitions": {
+    "animation": {
+      "type": "string",
+      "enum": ["morph", "typewriter", "cascade", "focus"],
+      "default": "morph"
+    },
+    "stepConfig": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string",
+          "description": "Filename to match (exact match)"
+        },
+        "animation": {
+          "$ref": "#/definitions/animation",
+          "description": "Animation style override for this step"
+        },
+        "charsPerSecond": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Characters per second for typewriter animation"
+        }
+      },
+      "required": ["file"],
+      "additionalProperties": false
+    }
+  },
   "properties": {
     "theme": {
       "type": "string",
@@ -53,6 +80,15 @@
       "enum": ["post", "tutorial", "square"],
       "default": "tutorial"
     },
+    "animation": {
+      "$ref": "#/definitions/animation"
+    },
+    "charsPerSecond": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 30,
+      "description": "Global characters per second for typewriter animation"
+    },
     "fps": {
       "type": "integer",
       "minimum": 1,
@@ -66,6 +102,13 @@
     "height": {
       "type": "integer",
       "minimum": 1
+    },
+    "stepConfigs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/stepConfig"
+      },
+      "description": "Per-step animation configuration overrides"
     }
   },
   "additionalProperties": false

@@ -1,6 +1,11 @@
 import { highlight, HighlightedCode } from "codehike/code";
 import { createTwoslasher } from "twoslash";
+import type { z } from "zod";
 import type { StaticFile } from "../../calculate-metadata/get-files";
+import type {
+  animationSchema,
+  stepConfigSchema,
+} from "../../calculate-metadata/schema";
 import {
   Theme,
   loadTheme,
@@ -14,10 +19,15 @@ import {
 } from "../../shared/calculations";
 import ts from "typescript";
 
+export type Animation = z.infer<typeof animationSchema>;
+export type StepConfig = z.infer<typeof stepConfigSchema>;
+
 export type CodeStep = {
   code: HighlightedCode;
   fontSize: number;
   durationInFrames: number;
+  animation: Animation;
+  charsPerSecond: number;
 };
 
 export type ProcessedCode = {
@@ -119,13 +129,21 @@ async function processSnippet(
 export async function processCode(
   files: StaticFile[],
   theme: Theme,
-  animation: string,
+  animation: Animation,
   charsPerSecond: number,
   width: number,
   height: number,
+  stepConfigs?: StepConfig[],
 ): Promise<ProcessedCode> {
   const shikiTheme = await loadTheme(theme);
   const themeColors = await getThemeColors(theme);
+
+  const stepConfigMap = new Map<string, StepConfig>();
+  if (stepConfigs) {
+    for (const config of stepConfigs) {
+      stepConfigMap.set(config.file, config);
+    }
+  }
 
   const steps = await Promise.all(
     files.map(async (file) => {
@@ -133,13 +151,24 @@ export async function processCode(
       const fontSize = calculateStepFontSize(file.value, width, height);
       const charCount = countChars(code);
       const lineCount = file.value.split("\n").length;
+
+      const stepConfig = stepConfigMap.get(file.filename);
+      const stepAnimation = stepConfig?.animation ?? animation;
+      const stepCps = stepConfig?.charsPerSecond ?? charsPerSecond;
+
       const durationInFrames = calculateStepDuration(
         charCount,
         lineCount,
-        animation,
-        charsPerSecond,
+        stepAnimation,
+        stepCps,
       );
-      return { code, fontSize, durationInFrames };
+      return {
+        code,
+        fontSize,
+        durationInFrames,
+        animation: stepAnimation,
+        charsPerSecond: stepCps,
+      };
     }),
   );
 

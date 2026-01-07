@@ -17,7 +17,11 @@ import {
   isInteractiveTerminal,
   scanCurrentDirectory,
 } from "../utils/files";
-import { processCode } from "../utils/process-code";
+import {
+  processCode,
+  type Animation,
+  type StepConfig,
+} from "../utils/process-code";
 import {
   runInteractive,
   createRenderSpinner,
@@ -96,6 +100,7 @@ Examples:
     let output: string;
     let selectedFiles: string[];
     let useInteractiveProgress = false;
+    let interactiveStepConfigs: StepConfig[] | undefined;
 
     if (shouldInteractive) {
       const result = await runInteractive({
@@ -117,6 +122,7 @@ Examples:
       output = result.output;
       charsPerSecond = result.cps;
       fps = result.fps;
+      interactiveStepConfigs = result.stepConfigs;
       useInteractiveProgress = true;
     } else {
       selectedFiles = files;
@@ -156,6 +162,29 @@ Examples:
       process.exit(1);
     }
 
+    const filenames = new Set(selectedFiles.map((f) => basename(f)));
+    const stepConfigsToValidate = interactiveStepConfigs ?? config.stepConfigs;
+
+    if (stepConfigsToValidate) {
+      for (const stepConfig of stepConfigsToValidate) {
+        if (!filenames.has(stepConfig.file)) {
+          logger.warn(
+            `Step config for "${stepConfig.file}" doesn't match any provided file`,
+          );
+        }
+
+        const effectiveAnimation = stepConfig.animation ?? animation;
+        if (
+          stepConfig.charsPerSecond !== undefined &&
+          effectiveAnimation !== "typewriter"
+        ) {
+          logger.warn(
+            `charsPerSecond for "${stepConfig.file}" is only used with typewriter animation`,
+          );
+        }
+      }
+    }
+
     const staticFiles = await readFiles(selectedFiles);
     const presetDims =
       presetDimensions[preset as keyof typeof presetDimensions];
@@ -171,14 +200,17 @@ Examples:
       );
     }
 
+    const finalStepConfigs = interactiveStepConfigs ?? config.stepConfigs;
+
     spinner?.start("Processing code...");
     const processed = await processCode(
       staticFiles,
       theme as Theme,
-      animation,
+      animation as Animation,
       charsPerSecond,
       presetDims.width,
       presetDims.height,
+      finalStepConfigs,
     );
 
     const inputProps = {

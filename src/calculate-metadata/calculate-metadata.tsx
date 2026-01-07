@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { CalculateMetadataFunction } from "remotion";
 import { getThemeColors } from "./theme";
-import { Props, CodeStep } from "../Main";
-import { schema, presetDimensions } from "./schema";
+import { Props, CodeStep, Animation } from "../Main";
+import { schema, presetDimensions, stepConfigSchema } from "./schema";
 import { processSnippetSimple } from "./process-snippet";
 import { getFilesFromStudio } from "./get-files";
 import { tabSize, CHAR_WIDTH_RATIO } from "../font";
@@ -11,6 +11,8 @@ import {
   calculateStepFontSize,
   calculateStepDuration,
 } from "../shared/calculations";
+
+type StepConfig = z.infer<typeof stepConfigSchema>;
 
 export const calculateMetadata: CalculateMetadataFunction<
   z.infer<typeof schema> & Props
@@ -46,6 +48,13 @@ export const calculateMetadata: CalculateMetadataFunction<
   const contents = props.files ?? (await getFilesFromStudio());
   const themeColors = await getThemeColors(props.theme);
 
+  const stepConfigMap = new Map<string, StepConfig>();
+  if (props.stepConfigs) {
+    for (const config of props.stepConfigs) {
+      stepConfigMap.set(config.file, config);
+    }
+  }
+
   const steps: CodeStep[] = [];
   for (const snippet of contents) {
     const code = await processSnippetSimple(snippet, props.theme);
@@ -56,13 +65,24 @@ export const calculateMetadata: CalculateMetadataFunction<
     );
     const charCount = flattenCode(code).length;
     const lineCount = snippet.value.split("\n").length;
+
+    const stepConfig = stepConfigMap.get(snippet.filename);
+    const stepAnimation: Animation = stepConfig?.animation ?? props.animation;
+    const stepCps = stepConfig?.charsPerSecond ?? props.charsPerSecond;
+
     const durationInFrames = calculateStepDuration(
       charCount,
       lineCount,
-      props.animation,
-      props.charsPerSecond,
+      stepAnimation,
+      stepCps,
     );
-    steps.push({ code, fontSize, durationInFrames });
+    steps.push({
+      code,
+      fontSize,
+      durationInFrames,
+      animation: stepAnimation,
+      charsPerSecond: stepCps,
+    });
   }
 
   const maxCharacters = Math.max(

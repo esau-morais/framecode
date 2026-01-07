@@ -67,6 +67,7 @@ export async function getThemeColors(themeName: Theme) {
       foreground: colors["editor.foreground"] || "#ffffff",
       lineHighlightBackground: colors["editor.lineHighlightBackground"] || "",
       rangeHighlightBackground: colors["editor.rangeHighlightBackground"] || "",
+      selectionBackground: colors["editor.selectionBackground"] || "",
     },
     icon: {
       foreground:
