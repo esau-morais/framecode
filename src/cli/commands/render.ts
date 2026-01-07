@@ -2,22 +2,27 @@ import { Command } from "commander";
 import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
 import { loadConfig } from "../utils/config";
-import { logger, ProgressBar } from "../utils/logger";
+import { logger } from "../utils/logger";
 import {
   themeSchema,
   animationSchema,
   presetSchema,
   presetDimensions,
 } from "../../calculate-metadata/schema";
+import type { Theme } from "../../calculate-metadata/theme";
 import { basename, join } from "path";
 import type { StaticFile } from "../../calculate-metadata/get-files";
 import {
   expandGlobPatterns,
   isInteractiveTerminal,
-  promptFileSelection,
   scanCurrentDirectory,
 } from "../utils/files";
 import { processCode } from "../utils/process-code";
+import {
+  runInteractive,
+  createRenderSpinner,
+  renderOutro,
+} from "../utils/prompts";
 
 const entryPoint = join(import.meta.dir, "../../index.ts");
 
@@ -40,13 +45,15 @@ export const renderCommand = new Command("render")
   .description("Render code files to video")
   .argument("[files...]", "code files or glob patterns")
   .option("-o, --output <path>", "output file path", "output.mp4")
-  .option("-t, --theme <name>", "syntax theme", "github-dark")
-  .option("-p, --preset <name>", "post|tutorial|square", "tutorial")
-  .option("-a, --animation <name>", "morph|typewriter|cascade", "morph")
+  .option("-t, --theme <name>", "syntax theme")
+  .option("-p, --preset <name>", "post|tutorial|square")
+  .option("-a, --animation <name>", "morph|typewriter|cascade|focus")
   .option("--cps <number>", "chars per second (typewriter)", "30")
   .option("-f, --fps <number>", "frames per second", "30")
   .option("-c, --config <path>", "config file path")
-  .option("-i, --interactive", "interactively select files")
+  .option("-i, --interactive", "launch interactive mode")
+  .option("-y, --yes", "skip confirmation prompt")
+  .option("--no-interactive", "disable interactive mode (for CI)")
   .addHelpText(
     "after",
     `
@@ -55,17 +62,71 @@ Examples:
   $ framecode render "src/**/*.ts"
   $ framecode render "src/*.ts" "!src/*.test.ts"
   $ framecode render src/ --interactive
-  $ framecode render`,
+  $ framecode render -i
+  $ framecode render code.ts -y`,
   )
   .action(async (filesArg: string[], options) => {
     const config = await loadConfig(options.config);
+    const isCI = !isInteractiveTerminal();
 
-    const theme = options.theme ?? config.theme ?? "github-dark";
-    const preset = options.preset ?? config.preset ?? "tutorial";
-    const animation = options.animation ?? config.animation ?? "morph";
-    const charsPerSecond = Number(options.cps ?? config.charsPerSecond ?? 30);
-    const fps = Number(options.fps ?? config.fps ?? 30);
-    const output = options.output;
+    let files: string[];
+    if (filesArg.length === 0) {
+      files = await scanCurrentDirectory();
+      if (files.length === 0) {
+        logger.error("No code files found in current directory");
+        process.exit(1);
+      }
+    } else {
+      files = await expandGlobPatterns(filesArg);
+      if (files.length === 0) {
+        logger.error("No files matched the provided patterns");
+        process.exit(1);
+      }
+    }
+
+    const shouldInteractive =
+      options.interactive === true ||
+      (filesArg.length === 0 && !isCI && options.interactive !== false);
+
+    let theme: string;
+    let preset: string;
+    let animation: string;
+    let charsPerSecond: number;
+    let fps: number;
+    let output: string;
+    let selectedFiles: string[];
+    let useInteractiveProgress = false;
+
+    if (shouldInteractive) {
+      const result = await runInteractive({
+        files,
+        theme: options.theme,
+        animation: options.animation,
+        preset: options.preset,
+        output: options.output,
+        cps: options.cps ? Number(options.cps) : undefined,
+        fps: options.fps ? Number(options.fps) : undefined,
+        yes: options.yes,
+        config,
+      });
+
+      selectedFiles = result.files;
+      theme = result.theme;
+      animation = result.animation;
+      preset = result.preset;
+      output = result.output;
+      charsPerSecond = result.cps;
+      fps = result.fps;
+      useInteractiveProgress = true;
+    } else {
+      selectedFiles = files;
+      theme = options.theme ?? config.theme ?? "github-dark";
+      preset = options.preset ?? config.preset ?? "tutorial";
+      animation = options.animation ?? config.animation ?? "morph";
+      charsPerSecond = Number(options.cps ?? config.charsPerSecond ?? 30);
+      fps = Number(options.fps ?? config.fps ?? 30);
+      output = options.output;
+    }
 
     if (!themeSchema.safeParse(theme).success) {
       logger.error(`Invalid theme: ${theme}`);
@@ -75,7 +136,7 @@ Examples:
 
     if (!animationSchema.safeParse(animation).success) {
       logger.error(`Invalid animation: ${animation}`);
-      logger.info("Valid: morph, typewriter, cascade");
+      logger.info("Valid: morph, typewriter, cascade, focus");
       process.exit(1);
     }
 
@@ -95,55 +156,30 @@ Examples:
       process.exit(1);
     }
 
-    let files: string[];
-    const needsInteractive = filesArg.length === 0 || options.interactive;
-
-    if (filesArg.length === 0) {
-      files = await scanCurrentDirectory();
-      if (files.length === 0) {
-        logger.error("No code files found in current directory");
-        process.exit(1);
-      }
-    } else {
-      files = await expandGlobPatterns(filesArg);
-      if (files.length === 0) {
-        logger.error("No files matched the provided patterns");
-        process.exit(1);
-      }
-    }
-
-    if (needsInteractive) {
-      if (isInteractiveTerminal()) {
-        files = await promptFileSelection(files);
-      } else {
-        logger.warn(
-          `Non-interactive mode: using all ${files.length} matched files`,
-        );
-      }
-    }
-
-    if (files.length === 0) {
-      logger.error("No files selected");
-      process.exit(1);
-    }
-
-    const staticFiles = await readFiles(files);
+    const staticFiles = await readFiles(selectedFiles);
     const presetDims =
       presetDimensions[preset as keyof typeof presetDimensions];
 
-    logger.info(`Rendering ${files.length} file(s) with ${theme} theme`);
-    logger.info(`Preset: ${preset} (${presetDims.width}x${presetDims.height})`);
+    const spinner = useInteractiveProgress ? createRenderSpinner() : null;
 
-    const processProgress = new ProgressBar("Processing");
+    if (!useInteractiveProgress) {
+      logger.info(
+        `Rendering ${selectedFiles.length} file(s) with ${theme} theme`,
+      );
+      logger.info(
+        `Preset: ${preset} (${presetDims.width}x${presetDims.height})`,
+      );
+    }
+
+    spinner?.start("Processing code...");
     const processed = await processCode(
       staticFiles,
-      theme,
+      theme as Theme,
       animation,
       charsPerSecond,
       presetDims.width,
       presetDims.height,
     );
-    processProgress.update(1);
 
     const inputProps = {
       theme,
@@ -156,10 +192,10 @@ Examples:
     };
 
     try {
-      const bundleProgress = new ProgressBar("Bundling");
+      spinner?.message("Bundling...");
       const bundleLocation = await bundle({
         entryPoint,
-        onProgress: (p) => bundleProgress.update(p / 100),
+        onProgress: () => {},
       });
 
       const composition = await selectComposition({
@@ -170,7 +206,7 @@ Examples:
         onBrowserLog: () => {},
       });
 
-      const renderProgress = new ProgressBar("Rendering");
+      spinner?.message("Rendering video...");
       await renderMedia({
         composition: {
           ...composition,
@@ -184,11 +220,18 @@ Examples:
         onBrowserLog: () => {},
         outputLocation: output,
         inputProps,
-        onProgress: ({ progress }) => renderProgress.update(progress),
+        onProgress: () => {},
       });
 
-      logger.success(`Video saved to ${output}`);
+      spinner?.stop("Done!");
+
+      if (useInteractiveProgress) {
+        renderOutro(output);
+      } else {
+        logger.success(`Video saved to ${output}`);
+      }
     } catch (error) {
+      spinner?.stop("Failed");
       logger.error("Render failed");
       if (error instanceof Error) {
         logger.error(error.message);

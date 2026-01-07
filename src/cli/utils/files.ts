@@ -1,7 +1,4 @@
 import { Glob } from "bun";
-import { checkbox } from "@inquirer/prompts";
-import chalk from "chalk";
-import { logger } from "./logger";
 
 const CODE_EXTENSIONS =
   "*.{ts,tsx,js,jsx,mjs,cjs,py,rb,go,rs,java,kt,swift,c,cpp,h,hpp,cs,php,vue,svelte}";
@@ -131,49 +128,6 @@ async function isDir(path: string): Promise<boolean> {
 
 export function isInteractiveTerminal(): boolean {
   return process.stdout.isTTY === true && process.stdin.isTTY === true;
-}
-
-export async function promptFileSelection(files: string[]): Promise<string[]> {
-  if (files.length === 0) {
-    return [];
-  }
-
-  if (files.length === 1) {
-    return files;
-  }
-
-  const choices = files.map((file) => ({
-    name: `${file} ${chalk.dim(`(${getFileSize(file)})`)}`,
-    value: file,
-  }));
-
-  const selected = await checkbox({
-    message:
-      "Select files to render (↑↓ navigate, space toggle, a toggle all, type to filter)",
-    choices,
-    loop: false,
-    pageSize: 15,
-  });
-
-  if (selected.length === 0) {
-    logger.warn("No files selected, exiting");
-    process.exit(0);
-  }
-
-  return selected;
-}
-
-function getFileSize(filePath: string): string {
-  try {
-    const file = Bun.file(filePath);
-    const bytes = file.size;
-
-    if (bytes < 1024) return `${bytes}B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
-  } catch {
-    return "?";
-  }
 }
 
 const MAX_SCAN_DEPTH = 5;

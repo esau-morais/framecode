@@ -1,6 +1,6 @@
 {
 	"name": "framecode",
-	"version": "0.1.6",
+	"version": "0.1.7",
 	"private": false,
 	"description": "CLI-first video generator that turns code snippets into videos",
 	"license": "MIT",
@@ -28,7 +28,7 @@
 		"prepublishOnly": "bun run typecheck && bun run lint && bun run build"
 	},
 	"dependencies": {
-		"@inquirer/prompts": "^8.1.0",
+		"@clack/prompts": "^1.0.0-alpha.9",
 		"@remotion/bundler": "4.0.399",
 		"@remotion/cli": "4.0.399",
 		"@remotion/google-fonts": "4.0.399",
