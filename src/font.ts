@@ -5,7 +5,7 @@ export const { fontFamily, waitUntilDone } = loadFont("normal", {
   weights: ["400", "700"],
 });
 export const fontSize = 40;
-export const minFontSize = 16;
+export const minFontSize = 20;
 export const tabSize = 3;
 export const horizontalPadding = 60;
 export const verticalPadding = 84;

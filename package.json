@@ -1,6 +1,6 @@
 {
   "name": "framecode",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "private": false,
   "description": "CLI-first video generator that turns code snippets into videos",
   "license": "MIT",
