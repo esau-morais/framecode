@@ -9,12 +9,21 @@ const Step: React.FC<{
   readonly index: number;
   readonly currentStep: number;
   readonly currentStepProgress: number;
-}> = ({ index, currentStep, currentStepProgress }) => {
+  readonly trackColor?: string;
+  readonly fillColor?: string;
+}> = ({
+  index,
+  currentStep,
+  currentStepProgress,
+  trackColor,
+  fillColor,
+}) => {
   const themeColors = useThemeColors();
 
   const outer: React.CSSProperties = useMemo(() => {
     return {
       backgroundColor:
+        trackColor ??
         themeColors.editor.lineHighlightBackground ??
         themeColors.editor.rangeHighlightBackground,
       borderRadius: 6,
@@ -22,12 +31,12 @@ const Step: React.FC<{
       height: "100%",
       flex: 1,
     };
-  }, [themeColors]);
+  }, [themeColors, trackColor]);
 
   const inner: React.CSSProperties = useMemo(() => {
     return {
       height: "100%",
-      backgroundColor: themeColors.icon.foreground,
+      backgroundColor: fillColor ?? themeColors.icon.foreground,
       width:
         index > currentStep
           ? 0
@@ -35,7 +44,7 @@ const Step: React.FC<{
             ? currentStepProgress * 100 + "%"
             : "100%",
     };
-  }, [themeColors.icon.foreground, index, currentStep, currentStepProgress]);
+  }, [fillColor, themeColors.icon.foreground, index, currentStep, currentStepProgress]);
 
   return (
     <div style={outer}>
@@ -44,7 +53,21 @@ const Step: React.FC<{
   );
 };
 
-export function ProgressBar({ steps }: { readonly steps: CodeStep[] }) {
+export function ProgressBar({
+  steps,
+  trackColor,
+  fillColor,
+  top = 48,
+  height = 6,
+  gap = 12,
+}: {
+  readonly steps: CodeStep[];
+  readonly trackColor?: string;
+  readonly fillColor?: string;
+  readonly top?: number;
+  readonly height?: number;
+  readonly gap?: number;
+}) {
   const frame = useCurrentFrame();
 
   const { currentStep, currentStepProgress } = useMemo(() => {
@@ -63,20 +86,22 @@ export function ProgressBar({ steps }: { readonly steps: CodeStep[] }) {
   const container: React.CSSProperties = useMemo(() => {
     return {
       position: "absolute",
-      top: 48,
-      height: 6,
+      top,
+      height,
       left: horizontalPadding,
       right: horizontalPadding,
       display: "flex",
-      gap: 12,
+      gap,
     };
-  }, []);
+  }, [gap, height, top]);
 
   return (
     <div style={container}>
       {steps.map((_, index) => (
         <Step
           key={index}
+          trackColor={trackColor}
+          fillColor={fillColor}
           currentStep={currentStep}
           currentStepProgress={currentStepProgress}
           index={index}

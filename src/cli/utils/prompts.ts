@@ -38,14 +38,14 @@ const ANIMATIONS = animationSchema.options;
 const PRESETS = presetSchema.options;
 
 const POPULAR_THEMES = [
+  "vercel-dark",
+  "story-gradients",
+  "retro-terminal",
   "github-dark",
+  "synthwave-84",
   "dracula",
-  "nord",
   "tokyo-night",
   "catppuccin-mocha",
-  "rose-pine",
-  "synthwave-84",
-  "one-dark-pro",
 ] as const;
 
 function getFileSize(filePath: string): string {
@@ -68,7 +68,7 @@ export async function runInteractive(
   const needsFilePrompt = opts.files.length > 1;
   const needsOutputPrompt = opts.output === "output.mp4";
 
-  const defaultTheme = opts.theme ?? opts.config?.theme ?? "github-dark";
+  const defaultTheme = opts.theme ?? opts.config?.theme ?? "vercel-dark";
   const defaultAnimation = opts.animation ?? opts.config?.animation ?? "morph";
   const defaultPreset = opts.preset ?? opts.config?.preset ?? "tutorial";
 

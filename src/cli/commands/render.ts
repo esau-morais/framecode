@@ -8,8 +8,10 @@ import {
   animationSchema,
   presetSchema,
   presetDimensions,
+  brandSchema,
 } from "../../calculate-metadata/schema";
 import type { Theme } from "../../calculate-metadata/theme";
+import type { BrandConfig } from "../../calculate-metadata/schema";
 import { basename, join } from "path";
 import type { StaticFile } from "../../calculate-metadata/get-files";
 import {
@@ -45,6 +47,82 @@ async function readFiles(files: string[]): Promise<StaticFile[]> {
   );
 }
 
+function getImageMimeType(path: string): string {
+  const extension = path.toLowerCase().split(".").pop();
+
+  switch (extension) {
+    case "png":
+      return "image/png";
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "webp":
+      return "image/webp";
+    case "svg":
+      return "image/svg+xml";
+    case "gif":
+      return "image/gif";
+    default:
+      return "application/octet-stream";
+  }
+}
+
+async function normalizeLogoSource(logo: string): Promise<string> {
+  if (/^(https?:)?\/\//i.test(logo) || logo.startsWith("data:")) {
+    return logo;
+  }
+
+  const file = Bun.file(logo);
+  if (!(await file.exists())) {
+    logger.warn(`Brand logo not found: ${logo}`);
+    return logo;
+  }
+
+  const bytes = await file.arrayBuffer();
+  const encoded = Buffer.from(bytes).toString("base64");
+  const mimeType = getImageMimeType(logo);
+  return `data:${mimeType};base64,${encoded}`;
+}
+
+async function normalizeBrand(
+  brand?: Partial<BrandConfig>,
+): Promise<BrandConfig | undefined> {
+  if (!brand) {
+    return undefined;
+  }
+
+  const logo = brand.logo?.trim();
+  const twitter = brand.twitter?.trim();
+  const website = brand.website?.trim();
+  const accent = brand.accent?.trim();
+
+  const normalized: BrandConfig = {};
+
+  if (logo) {
+    normalized.logo = await normalizeLogoSource(logo);
+  }
+
+  if (twitter) {
+    normalized.twitter = twitter.startsWith("@") ? twitter : `@${twitter}`;
+  }
+
+  if (website) {
+    normalized.website = /^(https?:)?\/\//i.test(website)
+      ? website
+      : `https://${website}`;
+  }
+
+  if (accent) {
+    normalized.accent = accent;
+  }
+
+  if (Object.keys(normalized).length === 0) {
+    return undefined;
+  }
+
+  return normalized;
+}
+
 export const renderCommand = new Command("render")
   .description("Render code files to video")
   .argument("[files...]", "code files or glob patterns")
@@ -57,6 +135,10 @@ export const renderCommand = new Command("render")
   .option("-c, --config <path>", "config file path")
   .option("-i, --interactive", "launch interactive mode")
   .option("-y, --yes", "skip confirmation prompt")
+  .option("--logo <pathOrUrl>", "brand logo image")
+  .option("--twitter <handle>", "Twitter/X handle watermark")
+  .option("--website <url>", "website watermark")
+  .option("--accent <color>", "brand accent color override")
   .option("--no-interactive", "disable interactive mode (for CI)")
   .addHelpText(
     "after",
@@ -101,6 +183,7 @@ Examples:
     let selectedFiles: string[];
     let useInteractiveProgress = false;
     let interactiveStepConfigs: StepConfig[] | undefined;
+    let brand: BrandConfig | undefined;
 
     if (shouldInteractive) {
       const result = await runInteractive({
@@ -124,14 +207,28 @@ Examples:
       fps = result.fps;
       interactiveStepConfigs = result.stepConfigs;
       useInteractiveProgress = true;
+
+      brand = await normalizeBrand({
+        logo: options.logo ?? config.brand?.logo,
+        twitter: options.twitter ?? config.brand?.twitter,
+        website: options.website ?? config.brand?.website,
+        accent: options.accent ?? config.brand?.accent,
+      });
     } else {
       selectedFiles = files;
-      theme = options.theme ?? config.theme ?? "github-dark";
+      theme = options.theme ?? config.theme ?? "vercel-dark";
       preset = options.preset ?? config.preset ?? "tutorial";
       animation = options.animation ?? config.animation ?? "morph";
       charsPerSecond = Number(options.cps ?? config.charsPerSecond ?? 30);
       fps = Number(options.fps ?? config.fps ?? 30);
       output = options.output;
+
+      brand = await normalizeBrand({
+        logo: options.logo ?? config.brand?.logo,
+        twitter: options.twitter ?? config.brand?.twitter,
+        website: options.website ?? config.brand?.website,
+        accent: options.accent ?? config.brand?.accent,
+      });
     }
 
     if (!themeSchema.safeParse(theme).success) {
@@ -159,6 +256,14 @@ Examples:
 
     if (isNaN(fps) || fps <= 0 || fps > 120) {
       logger.error(`Invalid fps: ${options.fps} (must be 1-120)`);
+      process.exit(1);
+    }
+
+    if (brand && !brandSchema.safeParse(brand).success) {
+      logger.error("Invalid brand configuration");
+      logger.info(
+        "Accent color must be hex format (#RGB or #RRGGBB) when provided",
+      );
       process.exit(1);
     }
 
@@ -218,6 +323,7 @@ Examples:
       preset,
       animation,
       charsPerSecond,
+      brand,
       steps: processed.steps,
       themeColors: processed.themeColors,
       codeWidth: processed.codeWidth,

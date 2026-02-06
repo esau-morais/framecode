@@ -15,8 +15,9 @@ export const initCommand = new Command("init")
 
     const defaultConfig = {
       $schema: schemaUrl,
-      theme: "github-dark",
+      theme: "vercel-dark",
       preset: "tutorial",
+      animation: "cascade",
       fps: 30,
     };
 

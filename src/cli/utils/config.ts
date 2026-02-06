@@ -7,6 +7,7 @@ import {
   animationSchema,
   presetSchema,
   stepConfigSchema,
+  brandSchema,
 } from "../../calculate-metadata/schema";
 
 const configSchema = z.object({
@@ -15,6 +16,7 @@ const configSchema = z.object({
   animation: animationSchema.optional(),
   charsPerSecond: z.number().int().positive().optional(),
   fps: z.number().int().min(1).max(120).optional(),
+  brand: brandSchema.optional(),
   stepConfigs: z.array(stepConfigSchema).optional(),
 });
 

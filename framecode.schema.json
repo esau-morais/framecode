@@ -4,7 +4,11 @@
   "definitions": {
     "animation": {
       "type": "string",
-      "enum": ["morph", "typewriter", "cascade", "focus"],
+      "enum": [
+        "morph",
+        "typewriter",
+        "cascade"
+      ],
       "default": "morph"
     },
     "stepConfig": {
@@ -24,7 +28,32 @@
           "description": "Characters per second for typewriter animation"
         }
       },
-      "required": ["file"],
+      "required": [
+        "file"
+      ],
+      "additionalProperties": false
+    },
+    "brand": {
+      "type": "object",
+      "properties": {
+        "logo": {
+          "type": "string",
+          "description": "Logo source URL, data URL, or local file path"
+        },
+        "twitter": {
+          "type": "string",
+          "description": "Twitter/X handle watermark"
+        },
+        "website": {
+          "type": "string",
+          "description": "Website watermark"
+        },
+        "accent": {
+          "type": "string",
+          "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$",
+          "description": "Brand accent color (#RGB or #RRGGBB)"
+        }
+      },
       "additionalProperties": false
     }
   },
@@ -32,6 +61,9 @@
     "theme": {
       "type": "string",
       "enum": [
+        "vercel-dark",
+        "story-gradients",
+        "retro-terminal",
         "github-dark",
         "github-light",
         "nord",
@@ -73,11 +105,15 @@
         "dracula-soft",
         "houston"
       ],
-      "default": "github-dark"
+      "default": "vercel-dark"
     },
     "preset": {
       "type": "string",
-      "enum": ["post", "tutorial", "square"],
+      "enum": [
+        "post",
+        "tutorial",
+        "square"
+      ],
       "default": "tutorial"
     },
     "animation": {
@@ -102,6 +138,9 @@
     "height": {
       "type": "integer",
       "minimum": 1
+    },
+    "brand": {
+      "$ref": "#/definitions/brand"
     },
     "stepConfigs": {
       "type": "array",
